@@ -18,7 +18,33 @@ class RecommendationItem(ContractModel):
     title: str = ""
     price: float | None = Field(default=None, ge=0.0, allow_inf_nan=False)
     reasons: list[str] = Field(min_length=1)
+    # Evidence path per reason (same order), e.g. ``price`` or
+    # ``judgment.preference_fit.level``. The Generator validates these against the
+    # candidate payload before producing the item, so the E2E Gate can audit
+    # grounding instead of trusting the prose.
+    evidence_refs: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
+
+
+class GenerationMetadata(ContractModel):
+    """Execution metadata for one Generator call (observability, not user content).
+
+    ``model == "fallback_template"`` on :class:`RecommendationOutput` is the Gate-facing
+    marker; this record additionally explains *why* a fallback happened and how many
+    bounded retries were used. It never turns an unverified generation into a pass.
+    """
+
+    prompt_version: str | None = None
+    attempts: int = Field(default=0, ge=0)
+    api_retries: int = Field(default=0, ge=0)
+    format_retries: int = Field(default=0, ge=0)
+    fallback_used: bool = False
+    latency_ms: float | None = Field(default=None, ge=0.0)
+    prompt_tokens: int | None = Field(default=None, ge=0)
+    completion_tokens: int | None = Field(default=None, ge=0)
+    candidate_count: int = Field(default=0, ge=0)
+    error_kind: str | None = None
+    error: str | None = None
 
 
 class RecommendationOutput(ContractModel):
@@ -35,6 +61,7 @@ class RecommendationOutput(ContractModel):
     quality_satisfied: bool | None = None
     budget_exhausted: bool | None = None
     is_synthetic: bool = False
+    generation_metadata: GenerationMetadata | None = None
 
     @model_validator(mode="after")
     def _ranking_is_well_formed(self) -> Self:

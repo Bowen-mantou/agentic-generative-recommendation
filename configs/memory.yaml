@@ -1,6 +1,17 @@
-# User memory configuration (Phase 6). Disabled by default: Phase 0/1 do not write memory.
-# Mem0 keeps semantic preferences; structured interaction events stay in SQLite and are
-# never treated as TIGER sequences from free text (AGENTS.md §2.2, §3).
+# User memory configuration (Phase 6). Disabled by default: the CLI/E2E only enables it
+# explicitly. Mem0 keeps semantic preferences; structured interaction events stay in
+# SQLite and are never treated as TIGER sequences from free text (AGENTS.md §2.2, §3).
+#
+# Deployment verified in docs/phase6/D9_MEMORY_DEPLOYMENT.md (Q7):
+#   Qdrant v1.20.2 container `agr-qdrant`, 127.0.0.1:6333 only (no public exposure)
+#   mem0ai==2.2.1, qdrant-client==1.20.0 (installed in the server venv, locked there)
+#   collection `agr_user_memory`, single collection + per-query user_id filter (R11)
+#   embedding `intfloat/multilingual-e5-base`, 768 dims, revision d1287505…
+#     — a different vector space from the product `intfloat/e5-base-v2`; never share
+#       this collection with the product index (R8)
+#   add/update use the `passage: ` prefix, search uses the `query: ` prefix (D9 §7.3)
+# The embedding dimension (768) and prompt/version constants are locked in
+# src/recommender/memory/mem0_adapter.py because MemoryConfig does not expose them.
 memory:
   enabled: false
 
@@ -11,8 +22,10 @@ memory:
       port: 6333
       collection: agr_user_memory
     embedder:
+      # Provider name is Mem0's provider slot (huggingface); the adapter replaces the
+      # instance with the prefix-aware project E5MemoryEmbedder, so no second model load.
       provider: huggingface
-      model: intfloat/e5-base-v2
+      model: intfloat/multilingual-e5-base
 
   sqlite:
     path: data/processed/interaction_history.db
