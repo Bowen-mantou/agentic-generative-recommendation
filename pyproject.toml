@@ -11,10 +11,6 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Agentic Generative Recommendation contributors" }]
 
-[project.urls]
-Homepage = "https://github.com/Bowen-mantou/agentic-generative-recommendation"
-Repository = "https://github.com/Bowen-mantou/agentic-generative-recommendation"
-Issues = "https://github.com/Bowen-mantou/agentic-generative-recommendation/issues"
 
 # Core runtime dependencies are intentionally small. Heavy model dependencies live
 # in the optional extras so that the data contracts can be installed and tested
@@ -28,6 +24,10 @@ dependencies = [
   "tenacity>=8.3,<10",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Bowen-mantou/agentic-generative-recommendation"
+Repository = "https://github.com/Bowen-mantou/agentic-generative-recommendation"
+Issues = "https://github.com/Bowen-mantou/agentic-generative-recommendation/issues"
 [project.optional-dependencies]
 # Phase 1 retrieval baseline: E5 encoder + FAISS index.
 retrieval = [
