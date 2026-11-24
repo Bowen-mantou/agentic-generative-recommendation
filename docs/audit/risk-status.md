@@ -14,9 +14,9 @@
 | R3 | Reviews 下载 / 用户序列构建 | **Mitigated** | reviews 326,611,506 B（SHA-256 `36ca7c48…`）；694,252 事件 / 631,986 用户 / 112,565 商品；0 跳过；SQLite 已建并校验 | 保持时间切分与合成隔离 |
 | R4 | Qwen3-Reranker 原生打分实现错误 | **Closed**（有边界） | [reranker-smoke.md](reranker-smoke.md)：`Qwen3ForCausalLM` 跑通；yes=9693 / no=2152 单 token；官方模板三方一致；10 对手写文本 100% 区分；复现模型卡样例（7.597 vs 7.625）。分数饱和，**不可当概率/阈值** | 仅用于同 query 相对排序；阈值待标注数据 |
 | R5 | CPU Reranker 延迟/内存不满足 | **Mitigated**（实测数字已给出） | 512 token：单条 P50 0.41 s、batch4 摊薄 0.29 s；2048 token：单条 3.65 s、batch4 2.03 s；20 候选（512 token，batch4）≈ 6 s/query；fp32 权重 2.38 GB，batch1 峰值 3.9–5.2 GB | 批量/截断/候选数需按延迟预算设定；MUSA 未用（Q11） |
-| R6 | Constraint Schema 聚合语义不一致 | **Mitigated** | Q3 实现：无约束 → 空状态 + `not_configured_count`；单测覆盖全通过/任一失败/部分未知/无约束 | Phase 2 集成后回归 |
+| R6 | Constraint Schema 聚合语义不一致 | **Mitigated** | Q3 实现 + Phase 2 evaluator/pool；单测覆盖全通过/任一失败/部分未知/无约束；真实 E5 候选池 99→15/75/9（[phase2-report.md](phase2-report.md)） | 保持回归 |
 | R7 | e5-base-v2 与 Query 语言不匹配 | **Open** | 当前 Query 均为英文；未建人工相关性小集 | Phase 7 建小集评测 |
-| R8 | 商品价格/描述缺失影响约束 | **Mitigated**（数据事实已量化） | price 15.7%、description 17.0%、features 15.4%、details 96%；缺失一律 `unknown` | Phase 2 报告可验证/未知比例 |
+| R8 | 商品价格/描述缺失影响约束 | **Mitigated**（数据事实已量化） | price 15.7%、description 17.0%、features 15.4%、details 96%；真实候选池 99 个中 75 个 `unknown`、15 个可验证 | Phase 7 报告可验证/未知比例 |
 | R9 | Controller 阈值缺少标注数据 | **Open** | 尚无审核集 | Phase 5/7（Q6） |
 | R10 | Mem0/Qdrant/Embedding 版本或维度不兼容 | **Open** | 未部署 | Phase 6（Q7） |
 | R11 | Qdrant 用户过滤隔离 | **Open** | 未部署 | Phase 6 |
@@ -40,6 +40,7 @@
 | 语义 ID 冲突代理实验 | 服务器 `/tmp/rqvae_proxy.json`（3×256）与 `/tmp/rqvae_proxy_4x1024.json`（4×1024） |
 | Interaction History | `/mnt/agr-data/data/processed/interaction_history.db` |
 | Reranker 冒烟 | [reranker-smoke.md](reranker-smoke.md) |
+| Phase 2 候选池 | [phase2-report.md](phase2-report.md)、[evidence/pool_demo_v2.json](evidence/pool_demo_v2.json) |
 
 ## 3. 待更新
 

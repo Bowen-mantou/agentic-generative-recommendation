@@ -110,15 +110,15 @@ def test_secrets_override_and_blank_normalisation(
     assert blank.deepseek_api_key is None
 
 
-def test_paths_resolve_against_project_root() -> None:
-    config = load_config(environ={})
-    assert config.path("faiss_dir") == PROJECT_ROOT / "artifacts" / "faiss"
+def test_paths_resolve_against_project_root(config_dir: Path) -> None:
+    config = load_config(config_dir, environ={"AGR__PATHS__FAISS_DIR": "artifacts/test_faiss"})
+    assert config.path("faiss_dir") == PROJECT_ROOT / "artifacts" / "test_faiss"
     with pytest.raises(ConfigError):
         config.path("not_a_configured_path")
 
 
-def test_ensure_directories(tmp_path: Path) -> None:
-    config = load_config(environ={}).model_copy(update={"project_root": tmp_path})
+def test_ensure_directories(tmp_path: Path, config_dir: Path) -> None:
+    config = load_config(config_dir, environ={}).model_copy(update={"project_root": tmp_path})
     config.ensure_directories()
     for name in ("data_dir", "raw_dir", "processed_dir", "faiss_dir", "runs_dir"):
         assert config.path(name).is_dir()

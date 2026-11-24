@@ -20,14 +20,18 @@ from recommender import __version__
 from recommender.catalog.amazon import download_file, metadata_url, reviews_url
 from recommender.catalog.build import build_catalog, load_products, load_text_pairs
 from recommender.config import AppConfig, Settings, load_settings
+from recommender.fusion import build_candidate_pool, fuse_paths
 from recommender.interaction_history import (
     InteractionStore,
     build_interaction_history,
     sequence_length_summary,
 )
+from recommender.observability.context import new_request_context
 from recommender.observability.logging import configure_logging, get_logger
 from recommender.retrieval.e5.artifacts import build_bundle, load_retriever, verify_bundle
 from recommender.retrieval.e5.encoder import E5Encoder
+from recommender.schemas.common import ConstraintOperator
+from recommender.schemas.plan import HardConstraint
 
 _LOGGER = get_logger(__name__)
 
@@ -87,6 +91,20 @@ def build_parser() -> argparse.ArgumentParser:
     index_build.add_argument("--batch-size", type=int, default=None)
     index_info = index_sub.add_parser("info", help="verify a bundle and print its manifest")
     index_info.add_argument("--bundle", type=Path, required=True)
+
+    pool = subparsers.add_parser("pool", help="retrieve -> fuse -> constraints -> pool")
+    pool.add_argument("--bundle", type=Path, required=True)
+    pool.add_argument("--catalog", type=Path, required=True)
+    pool.add_argument("--query", action="append", required=True)
+    pool.add_argument(
+        "--constraint",
+        action="append",
+        default=None,
+        help="field:operator:value[:unit], e.g. price:lte:30:USD",
+    )
+    pool.add_argument("--top-k", type=int, default=10)
+    pool.add_argument("--per-query-k", type=int, default=None)
+    pool.add_argument("--device", default=None)
 
     search = subparsers.add_parser("search", help="query a built E5 bundle")
     search.add_argument("--bundle", type=Path, required=True)
@@ -301,6 +319,81 @@ def _cmd_index_info(args: argparse.Namespace) -> int:
     return 0
 
 
+def parse_constraint_text(text: str) -> HardConstraint:
+    """Parse ``field:operator:value[:unit]`` into a hard constraint."""
+    parts = text.split(":")
+    if len(parts) < 3:
+        raise ValueError(f"invalid constraint '{text}'; expected field:operator:value[:unit]")
+    field, operator, raw_value = parts[0], parts[1], parts[2]
+    unit = parts[3] if len(parts) > 3 else None
+    try:
+        value = json.loads(raw_value)
+    except json.JSONDecodeError:
+        value = raw_value
+    return HardConstraint(
+        field=field,
+        operator=ConstraintOperator(operator),
+        value=value,
+        unit=unit,
+    )
+
+
+def _cmd_pool(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    encoder = _make_encoder(config, device=args.device)
+    e5 = config.retrieval.e5
+    retriever = load_retriever(
+        args.bundle,
+        encoder,
+        top_k_per_query=args.per_query_k or e5.top_k_per_query,
+        rrf_k=e5.rrf_k,
+        max_queries=e5.max_queries,
+    )
+    output = retriever.search(args.query, top_k_per_query=args.per_query_k)
+    outcome = fuse_paths(
+        [output.fused],
+        rrf_k=config.retrieval.fusion.rrf_k,
+        max_candidates=config.retrieval.fusion.max_candidates,
+    )
+    products = {
+        product.product_id: product for product in load_products(args.catalog / "products.jsonl")
+    }
+    constraints = [parse_constraint_text(item) for item in (args.constraint or [])]
+    request_id = new_request_context().request_id
+    pool = build_candidate_pool(
+        request_id=request_id,
+        outcome=outcome,
+        constraints=constraints,
+        products=products,
+        rrf_k=config.retrieval.fusion.rrf_k,
+    )
+    payload = {
+        "request_id": request_id,
+        "queries": [result.query for result in output.per_query],
+        "summary": pool.constraint_summary.model_dump(mode="json"),
+        "constraints": [c.model_dump(mode="json") for c in constraints],
+        "eligible": [
+            {
+                "rank": index,
+                "product_id": candidate.product_id,
+                "fusion_score": round(candidate.fusion_score, 6),
+                "status": candidate.constraint_status.value
+                if candidate.constraint_status
+                else None,
+                "checks": [check.model_dump(mode="json") for check in candidate.constraint_checks],
+                "product": candidate.product_metadata,
+            }
+            for index, candidate in enumerate(pool.candidates[: args.top_k], start=1)
+        ],
+        "unverified_count": len(pool.unverified_candidates),
+        "rejected_count": len(pool.rejected_candidates),
+    }
+    print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
+    return 0
+
+
 def _cmd_search(args: argparse.Namespace) -> int:
     settings = _settings(args)
     config = settings.config
@@ -375,6 +468,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("history", "stats"): _cmd_history_stats,
         ("index", "build"): _cmd_index_build,
         ("index", "info"): _cmd_index_info,
+        ("pool", None): _cmd_pool,
         ("search", None): _cmd_search,
     }
     handler = commands.get((args.command, getattr(args, f"{args.command}_command", None)))

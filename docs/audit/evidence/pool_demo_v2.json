@@ -1,0 +1,219 @@
+{
+  "request_id": "req_e1bf0d21cd8d407a8f18188fc60cb100",
+  "queries": [
+    "lightweight daily moisturizer for sensitive skin",
+    "fragrance free face cream under 30 dollars"
+  ],
+  "summary": {
+    "evaluated_products": 99,
+    "pass_count": 15,
+    "fail_count": 9,
+    "unknown_count": 75,
+    "not_configured_count": 0,
+    "valid_product_count": 15,
+    "constraint_fields": [
+      "price",
+      "main_category"
+    ]
+  },
+  "constraints": [
+    {
+      "field": "price",
+      "operator": "lte",
+      "value": 30,
+      "unit": "USD",
+      "source": "current_request"
+    },
+    {
+      "field": "main_category",
+      "operator": "eq",
+      "value": "All Beauty",
+      "unit": null,
+      "source": "current_request"
+    }
+  ],
+  "eligible": [
+    {
+      "rank": 1,
+      "product_id": "B01L0JWQTW",
+      "fusion_score": 0.013158,
+      "status": "pass",
+      "checks": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "expected": 30,
+          "observed": 18.0,
+          "status": "pass",
+          "reason": null
+        },
+        {
+          "field": "main_category",
+          "operator": "eq",
+          "expected": "All Beauty",
+          "observed": "All Beauty",
+          "status": "pass",
+          "reason": null
+        }
+      ],
+      "product": {
+        "title": "Keri Whole Body Therapy Original Daily Moisture 8.50 oz (Pack of 3)",
+        "price": 18.0,
+        "main_category": "All Beauty",
+        "brand": "Keri"
+      }
+    },
+    {
+      "rank": 2,
+      "product_id": "B0009ET4SG",
+      "fusion_score": 0.012195,
+      "status": "pass",
+      "checks": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "expected": 30,
+          "observed": 16.19,
+          "status": "pass",
+          "reason": null
+        },
+        {
+          "field": "main_category",
+          "operator": "eq",
+          "expected": "All Beauty",
+          "observed": "All Beauty",
+          "status": "pass",
+          "reason": null
+        }
+      ],
+      "product": {
+        "title": "Beauty without Cruelty Maximum Moisture Cream, 2 Ounce",
+        "price": 16.19,
+        "main_category": "All Beauty",
+        "brand": "Beauty Without Cruelty"
+      }
+    },
+    {
+      "rank": 3,
+      "product_id": "B0016N55BE",
+      "fusion_score": 0.011765,
+      "status": "pass",
+      "checks": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "expected": 30,
+          "observed": 14.9,
+          "status": "pass",
+          "reason": null
+        },
+        {
+          "field": "main_category",
+          "operator": "eq",
+          "expected": "All Beauty",
+          "observed": "All Beauty",
+          "status": "pass",
+          "reason": null
+        }
+      ],
+      "product": {
+        "title": "CoverGirl Clean Clean Fragrance Free Foundation, Creamy Natural 220 1 fl oz (30 ml)",
+        "price": 14.9,
+        "main_category": "All Beauty",
+        "brand": "COVERGIRL"
+      }
+    },
+    {
+      "rank": 4,
+      "product_id": "B013THQAAO",
+      "fusion_score": 0.011236,
+      "status": "pass",
+      "checks": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "expected": 30,
+          "observed": 18.0,
+          "status": "pass",
+          "reason": null
+        },
+        {
+          "field": "main_category",
+          "operator": "eq",
+          "expected": "All Beauty",
+          "observed": "All Beauty",
+          "status": "pass",
+          "reason": null
+        }
+      ],
+      "product": {
+        "title": "Remedy Phytoplex Botanical Nourishing Skin Cream Moisturizer for Sensitive Skin 2oz (2pk)",
+        "price": 18.0,
+        "main_category": "All Beauty",
+        "brand": "Medline"
+      }
+    },
+    {
+      "rank": 5,
+      "product_id": "B00FPE6UH8",
+      "fusion_score": 0.01,
+      "status": "pass",
+      "checks": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "expected": 30,
+          "observed": 29.9,
+          "status": "pass",
+          "reason": null
+        },
+        {
+          "field": "main_category",
+          "operator": "eq",
+          "expected": "All Beauty",
+          "observed": "All Beauty",
+          "status": "pass",
+          "reason": null
+        }
+      ],
+      "product": {
+        "title": "Gratiae Organic Moisture Cream Lavender Aromatheraphy Collection Multi Purpose Perfect Skin, Anti Aging treatment for face and body, light, non sticky 4.25 Oz",
+        "price": 29.9,
+        "main_category": "All Beauty",
+        "brand": "GRATiAE"
+      }
+    },
+    {
+      "rank": 6,
+      "product_id": "B07F7V19HK",
+      "fusion_score": 0.009615,
+      "status": "pass",
+      "checks": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "expected": 30,
+          "observed": 10.01,
+          "status": "pass",
+          "reason": null
+        },
+        {
+          "field": "main_category",
+          "operator": "eq",
+          "expected": "All Beauty",
+          "observed": "All Beauty",
+          "status": "pass",
+          "reason": null
+        }
+      ],
+      "product": {
+        "title": "AVON ANEW ULTIMATE GOLD PEEL-OFF MASK (free vita moist hand cream 45ml with purchase",
+        "price": 10.01,
+        "main_category": "All Beauty",
+        "brand": "AVON"
+      }
+    }
+  ],
+  "unverified_count": 75,
+  "rejected_count": 9
+}

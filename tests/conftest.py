@@ -24,6 +24,8 @@ def config_dir(tmp_path: Path) -> Path:
     """A mutable copy of the real configs/ directory."""
     destination = tmp_path / "configs"
     shutil.copytree(CONFIGS_DIR, destination)
+    # Machine-local overlays must not leak into unit tests.
+    (destination / "local.yaml").unlink(missing_ok=True)
     return destination
 
 
