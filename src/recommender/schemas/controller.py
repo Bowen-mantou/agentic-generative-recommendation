@@ -16,6 +16,7 @@ from typing_extensions import Self
 from recommender.schemas.common import (
     ContractModel,
     ControllerAction,
+    FailedComponent,
     NonEmptyStr,
     StopReason,
 )
@@ -100,7 +101,27 @@ class QualityMetrics(ContractModel):
     evidence_coverage: float | None = Field(default=None, ge=0.0, le=1.0)
     unknown_attribute_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
     diversity: float | None = Field(default=None, ge=0.0, le=1.0)
+    # Decision D8: only Judgments that parsed, passed schema validation and are aligned
+    # with the ranked candidate set count towards quality. Fewer than
+    # ``QualityThresholds.min_judgments`` valid Judgments can never satisfy quality.
+    valid_judgment_count: int = Field(default=0, ge=0)
     quality_satisfied: bool = False
+
+
+class FailureInfo(ContractModel):
+    """Structured record of an exhausted model/API call (decision D4).
+
+    ``failed_component`` is limited to the three model-backed components so a trace
+    reader can tell a Planner outage from a Judgment outage without parsing prose.
+    The fields are optional on purpose: a failure raised by an older code path still
+    yields a valid record, just with fewer details.
+    """
+
+    failed_component: FailedComponent
+    error_type: str | None = None
+    retryable: bool | None = None
+    attempts: int | None = Field(default=None, ge=0)
+    message: str | None = None
 
 
 class ControllerDecision(ContractModel):
@@ -110,6 +131,9 @@ class ControllerDecision(ContractModel):
     budget_exhausted: bool = False
     reasons: list[str] = Field(default_factory=list)
     current_round: int = Field(default=0, ge=0)
+    # Only populated for ``API_FAILED`` stops (decision D4); ``None`` keeps every
+    # non-API decision byte-identical to the Phase 5 contract.
+    failure: FailureInfo | None = None
 
     @model_validator(mode="after")
     def _action_semantics(self) -> Self:
@@ -124,6 +148,13 @@ class ControllerDecision(ContractModel):
             raise ValueError("budget stop requires budget_exhausted=true")
         if self.action is ControllerAction.REPLAN and self.budget_exhausted:
             raise ValueError("cannot replan after the budget is exhausted")
+        if self.stop_reason is StopReason.API_FAILED:
+            if self.failure is None:
+                raise ValueError("api_failed stop requires failure details (failed_component)")
+            if self.quality_satisfied:
+                raise ValueError("api_failed stop cannot claim quality_satisfied")
+        elif self.failure is not None:
+            raise ValueError("failure details are only valid for an api_failed stop")
         return self
 
 

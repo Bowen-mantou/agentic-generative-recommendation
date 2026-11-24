@@ -5,9 +5,12 @@ upstream state — the Python Constraint Evaluator verdict, the Reranker ranking
 Judgment records — and applies explicit, testable rules:
 
 1. a plan that requests clarification yields CLARIFY;
-2. an API failure is an explicit degraded STOP, never an empty success;
+2. an exhausted Planner/Judgment/Generator API call is an explicit degraded STOP
+   ``API_FAILED`` carrying ``FailureInfo.failed_component`` (decision D4), never an
+   empty success and never a fabricated quality pass;
 3. quality satisfied by this round's validated evidence -> STOP ``QUALITY_SATISFIED``
-   (with an explicit note while ``controller.quality.calibrated`` is false);
+   (with an explicit note while ``controller.quality.calibrated`` is false). Decision D8
+   requires at least ``min_judgments`` valid Judgment results first;
 4. otherwise any exhausted budget dimension is a **forced** STOP and is never reported
    as ``quality_satisfied`` (AGENTS.md §2.6);
 5. zero valid candidates triggers REPLAN while budget/rounds allow, otherwise
@@ -15,7 +18,8 @@ Judgment records — and applies explicit, testable rules:
 6. insufficient quality triggers REPLAN while the loop guard allows, else STOP
    ``MAX_ROUNDS_REACHED``.
 
-Duplicate-query detection lives next to the decision rules but is executed by the
+Duplicate-query detection (decision D5) is strict SHA-256 hash equality over NFKC
+normalized query text; it lives next to the decision rules but is executed by the
 workflow *after* the Replanner returns a new plan (the Controller cannot inspect a plan
 that does not exist yet).
 """
@@ -23,6 +27,7 @@ that does not exist yet).
 from __future__ import annotations
 
 import hashlib
+import unicodedata
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -37,6 +42,7 @@ from recommender.schemas.constraints import ConstraintSummary
 from recommender.schemas.controller import (
     BudgetState,
     ControllerDecision,
+    FailureInfo,
     QualityMetrics,
     RecommendationState,
 )
@@ -51,8 +57,15 @@ _LOGGER = get_logger(__name__)
 
 
 def normalize_query(value: str) -> str:
-    """Canonical form used for duplicate-query detection."""
-    return " ".join(value.split()).casefold()
+    """Canonical form used for duplicate-query detection (decision D5).
+
+    NFKC folds full-width/compatibility characters (``Ａ`` -> ``A``), casefold folds
+    case, and the whitespace collapse removes tabs/newlines/ideographic spaces. Two
+    queries that differ only in those dimensions hash identically and count as
+    duplicates. Words are never reordered or stop-word-stripped: that would change the
+    retrieval semantics rather than normalise the text.
+    """
+    return " ".join(unicodedata.normalize("NFKC", value).split()).casefold()
 
 
 def query_hash(value: str) -> str:
@@ -93,6 +106,9 @@ def summarize_quality(
     * ``hard_constraints_satisfied`` means "no evaluated product failed or left a hard
       constraint unknown and at least one product is valid"; it does **not** claim the
       checks were configured/verified (decision Q3 keeps ``not_configured_count``);
+    * ``valid_judgment_count`` (decision D8) counts unique ``JudgmentRecord``s whose
+      ``product_id`` is aligned with the current ranked candidate set. A record that is
+      not aligned cannot be evidence for any selected product and is excluded;
     * ``evidence_coverage`` = share of judged products with at least one supported or
       contradicted attribute; ``None`` means nothing was judged and therefore quality
       cannot be satisfied;
@@ -109,6 +125,12 @@ def summarize_quality(
         and constraint_summary.unknown_count == 0
         and constraint_summary.valid_product_count > 0
     )
+    ranked_ids = {product.product_id for product in ranked_products}
+    valid_judgment_ids = {
+        record.result.product_id
+        for record in judgment_results
+        if record.result.product_id in ranked_ids
+    }
     match_distribution = {
         MatchAssessment.DIRECT_MATCH.value: 0,
         MatchAssessment.PARTIAL_MATCH.value: 0,
@@ -141,6 +163,7 @@ def summarize_quality(
             unknown_entries / evidence_entries if evidence_entries else None
         ),
         diversity=None,
+        valid_judgment_count=len(valid_judgment_ids),
         quality_satisfied=False,
     )
 
@@ -153,6 +176,10 @@ def evaluate_quality(
 
     Only configured thresholds are enforced. Unconfigured thresholds stay ``None`` and
     are skipped instead of being invented (AGENTS.md §8.8).
+
+    Decision D8 gates the quality pass on ``thresholds.min_judgments``: fewer valid
+    Judgment results than that can never satisfy quality, even if the validator split
+    happened to mark every judged product as a match.
     """
     satisfied = True
     if not metrics.hard_constraints_satisfied:
@@ -162,6 +189,8 @@ def evaluate_quality(
     # Quality must be based on actual Judgment results: no judged product cannot be a
     # quality pass (the workflow always judges before calling the Controller).
     if metrics.evidence_coverage is None:
+        satisfied = False
+    if metrics.valid_judgment_count < thresholds.min_judgments:
         satisfied = False
     if thresholds.min_mean_rerank_score is not None and (
         metrics.mean_rerank_score is None
@@ -217,9 +246,15 @@ class Controller:
         self,
         state: RecommendationState,
         *,
-        api_failure: str | None = None,
+        failure: FailureInfo | None = None,
     ) -> ControllerDecision:
-        """Apply the decision rules and return a validated decision."""
+        """Apply the decision rules and return a validated decision.
+
+        ``failure`` is set by the workflow when a Planner / Judgment / Generator call
+        exhausted its bounded retries (decision D4). Such a run stops with
+        ``API_FAILED`` and the failing component; it is never reported as a budget stop,
+        a retrieval degradation or a quality pass.
+        """
         metrics = state.quality_metrics or self.summarize(state)
         budget = state.budget_state
         plan = state.current_plan
@@ -239,21 +274,27 @@ class Controller:
                 current_round=round_number,
             )
 
-        if api_failure is not None:
-            stop_reason = (
-                StopReason.NO_VALID_CANDIDATES
-                if metrics.valid_product_count == 0
-                else StopReason.RETRIEVAL_DEGRADED
+        if failure is not None:
+            reasons.append(
+                "API failure: "
+                + (failure.message or "unknown error")
+                + f" (component={failure.failed_component.value})"
             )
-            reasons.append(f"API failure: {api_failure}")
+            if failure.error_type:
+                reasons.append(f"error_type: {failure.error_type}")
+            if failure.attempts is not None:
+                reasons.append(f"attempts exhausted: {failure.attempts}")
+            if failure.retryable is True:
+                reasons.append("the failure class is retryable; retries were already exhausted")
             reasons.append("degraded stop; no result was fabricated")
             decision = ControllerDecision(
                 action=ControllerAction.STOP,
-                stop_reason=stop_reason,
+                stop_reason=StopReason.API_FAILED,
                 quality_satisfied=False,
                 budget_exhausted=False,
                 reasons=reasons,
                 current_round=round_number,
+                failure=failure,
             )
             return self._log_decision(decision, metrics)
 
@@ -266,6 +307,10 @@ class Controller:
             reasons.append(
                 f"quality satisfied: valid={metrics.valid_product_count} "
                 f">= required={metrics.required_count}"
+            )
+            reasons.append(
+                f"valid judgments={metrics.valid_judgment_count} "
+                f">= min_judgments={self._config.quality.min_judgments}"
             )
             reasons.append(
                 "hard constraints satisfied with no unknown/failed check"
@@ -344,6 +389,11 @@ class Controller:
             f"required={metrics.required_count}, "
             f"unknown_attribute_ratio={metrics.unknown_attribute_ratio}"
         )
+        if metrics.valid_judgment_count < self._config.quality.min_judgments:
+            reasons.append(
+                f"valid judgments={metrics.valid_judgment_count} below "
+                f"min_judgments={self._config.quality.min_judgments}"
+            )
         if not metrics.hard_constraints_satisfied:
             reasons.append("hard constraints are not fully satisfied/verified")
         if metrics.match_distribution:
@@ -426,6 +476,10 @@ class Controller:
                 "current_round": decision.current_round,
                 "valid_product_count": metrics.valid_product_count,
                 "required_count": metrics.required_count,
+                "valid_judgment_count": metrics.valid_judgment_count,
+                "failed_component": (
+                    decision.failure.failed_component.value if decision.failure else None
+                ),
                 "reasons": decision.reasons,
             },
         )

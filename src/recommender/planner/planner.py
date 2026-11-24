@@ -7,9 +7,14 @@ Validation policy (module 2 §8, final-stage doc §9.2):
   plus the validator message are sent back once);
 * when repair still fails the Planner raises :class:`PlanGenerationError` with a
   structured payload. It never fabricates a "default plan": a failed replan must not be
-  mistaken for a successful one. Callers may explicitly keep the previous valid plan
-  (final-stage doc §9.3), which is a documented degradation handled in
-  :mod:`recommender.controller.workflow`.
+  mistaken for a successful one.
+
+Decision D7 (2026-11-24) adds an **explicitly configurable** degradation:
+``planner.fallback.enabled`` defaults to ``false`` (structured failure). When an
+operator enables it, an exhausted Planner call returns a deterministic, balanced
+system-default plan. That plan is marked ``degraded=True`` / ``plan_source=
+system_default`` on :class:`PlannerResult`, in its ``assumptions`` and in the trace, so
+it can never be mistaken for a Planner API success.
 
 The Replanner reuses :func:`validate_replan_preserves_hard_constraints` so a model can
 never drop or rewrite a user's hard constraint.
@@ -17,7 +22,9 @@ never drop or rewrite a user's hard constraint.
 
 from __future__ import annotations
 
+import hashlib
 import time
+import unicodedata
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -31,6 +38,7 @@ from recommender.api.deepseek import (
     DeepSeekJSONError,
     parse_json_content,
 )
+from recommender.config import PlannerFallbackConfig
 from recommender.observability.context import get_request_context, new_request_context
 from recommender.observability.logging import get_logger
 from recommender.observability.trace import TraceWriter
@@ -45,7 +53,12 @@ from recommender.planner.prompts import (
     build_repair_messages,
     build_replan_messages,
 )
-from recommender.schemas.common import SCHEMA_VERSION, PlanMode, RecallPath
+from recommender.schemas.common import (
+    SCHEMA_VERSION,
+    PlanMode,
+    RecallPath,
+    RetrievalStrategy,
+)
 from recommender.schemas.plan import (
     RecommendationPlan,
     validate_replan_preserves_hard_constraints,
@@ -56,6 +69,22 @@ _LOGGER = get_logger(__name__)
 
 DEFAULT_MAX_ATTEMPTS = 2
 _UNKNOWN_FIELD_PLACEHOLDER = object()
+
+# Assumptions written into every deterministic fallback plan (decision D7). They are
+# the plan-level audit marker: RecommendationPlan has no free-form ``degraded`` field
+# (schemas/plan.py is outside this task's scope), so the degradation is recorded in
+# ``assumptions`` plus ``PlannerResult.degraded``/``plan_source`` and trace events.
+FALLBACK_ASSUMPTIONS: tuple[str, ...] = (
+    "Planner API unavailable",
+    "Using deterministic balanced retrieval",
+    "degraded: plan_source=system_default",
+)
+_FALLBACK_SUFFIXES: tuple[str, ...] = (
+    "alternatives",
+    "alternative options",
+    "other options",
+    "different results",
+)
 
 
 class PlanGenerationError(RecommenderError):
@@ -111,6 +140,16 @@ class PlanGenerationError(RecommenderError):
         return payload
 
 
+class PlanFallbackError(RecommenderError):
+    """The explicit fallback was enabled but a deterministic plan could not be built.
+
+    Raised (chained from the original :class:`PlanGenerationError`) when the system has
+    no retrieval path to plan into. Never silently downgraded to an empty plan.
+    """
+
+    code = "plan_fallback_failed"
+
+
 @dataclass(frozen=True)
 class PlannerResult:
     """A validated plan plus the metadata needed for tracing and cost accounting."""
@@ -126,10 +165,18 @@ class PlannerResult:
     output_tokens: int | None = None
     repaired: bool = False
     identity_overrides: list[str] = field(default_factory=list)
+    # Decision D7: True only for an explicitly enabled system-default fallback plan.
+    degraded: bool = False
+    plan_source: str | None = None
 
 
 def _new_plan_id() -> str:
     return f"plan_{uuid.uuid4().hex[:12]}"
+
+
+def _fallback_plan_id(prefix: str, seed: str) -> str:
+    digest = hashlib.sha256(f"{prefix}\x00{seed}".encode()).hexdigest()[:12]
+    return f"plan_fallback_{digest}"
 
 
 def _normalize_field_name(value: str) -> str:
@@ -137,7 +184,17 @@ def _normalize_field_name(value: str) -> str:
 
 
 def _normalize_query(value: str) -> str:
-    return " ".join(value.split()).casefold()
+    """Canonical query text (decision D5: NFKC + whitespace collapse + casefold)."""
+    return " ".join(unicodedata.normalize("NFKC", value).split()).casefold()
+
+
+def _truncate_query(value: str, max_chars: int) -> str:
+    cleaned = " ".join(value.split())
+    if not cleaned:
+        cleaned = "product recommendation"
+    if len(cleaned) <= max_chars:
+        return cleaned
+    return cleaned[:max_chars].strip() or cleaned[:max_chars]
 
 
 def _format_validation_error(exc: Exception) -> str:
@@ -164,6 +221,7 @@ class Planner:
         temperature: float | None = None,
         max_tokens: int | None = None,
         trace: TraceWriter | None = None,
+        fallback: PlannerFallbackConfig | None = None,
     ) -> None:
         if max_attempts < 1:
             raise ValueError("max_attempts must be >= 1")
@@ -174,6 +232,8 @@ class Planner:
         self._temperature = temperature
         self._max_tokens = max_tokens
         self._trace = trace
+        # Decision D7 default: structured failure, never a fabricated plan.
+        self._fallback = fallback or PlannerFallbackConfig()
 
     @property
     def model(self) -> str:
@@ -182,6 +242,10 @@ class Planner:
     @property
     def limits(self) -> PlannerLimits:
         return self._limits
+
+    @property
+    def fallback(self) -> PlannerFallbackConfig:
+        return self._fallback
 
     @property
     def prompt_versions(self) -> dict[str, str]:
@@ -229,6 +293,9 @@ class Planner:
             prompt_version=INITIAL_PROMPT_VERSION,
             base_messages=base_messages,
             validate=validate,
+            fallback_builder=(
+                lambda: self._build_fallback_initial(data, plan_id=data.plan_id)
+            ),
         )
 
     def plan_replan(self, data: ReplanInput) -> PlannerResult:
@@ -259,6 +326,9 @@ class Planner:
             prompt_version=REPLAN_PROMPT_VERSION,
             base_messages=base_messages,
             validate=validate,
+            fallback_builder=(
+                lambda: self._build_fallback_replan(data, plan_id=data.plan_id)
+            ),
         )
 
     # -- generation loop -----------------------------------------------------
@@ -269,6 +339,7 @@ class Planner:
         prompt_version: str,
         base_messages: list[dict[str, str]],
         validate: Callable[[dict[str, Any]], tuple[RecommendationPlan, list[str]]],
+        fallback_builder: Callable[[], RecommendationPlan] | None = None,
     ) -> PlannerResult:
         started = time.perf_counter()
         context = get_request_context() or new_request_context()
@@ -304,8 +375,14 @@ class Planner:
                     error_kind=exc.kind.value,
                     model=self._model,
                 )
-                self._emit_failure(error)
-                raise error from exc
+                return self._handle_failure(
+                    error,
+                    cause=exc,
+                    fallback_builder=fallback_builder,
+                    prompt_version=prompt_version,
+                    started=started,
+                    attempts=attempt,
+                )
 
             last_raw = completion.content
             last_identity = (completion.request_id, completion.trace_id)
@@ -422,8 +499,191 @@ class Planner:
             model=self._model,
             raw_output=last_raw[:2000],
         )
-        self._emit_failure(error)
-        raise error
+        return self._handle_failure(
+            error,
+            fallback_builder=fallback_builder,
+            prompt_version=prompt_version,
+            started=started,
+            attempts=self._max_attempts,
+        )
+
+    # -- explicit fallback (decision D7) ------------------------------------
+    def _handle_failure(
+        self,
+        error: PlanGenerationError,
+        *,
+        fallback_builder: Callable[[], RecommendationPlan] | None,
+        prompt_version: str,
+        started: float,
+        attempts: int,
+        cause: BaseException | None = None,
+    ) -> PlannerResult:
+        """Return a marked fallback plan or re-raise the structured error.
+
+        The default (``planner.fallback.enabled=false``) is a structured failure: the
+        error is emitted and re-raised. Only an explicit opt-in produces a
+        deterministic system-default plan, and that plan is always marked degraded.
+        """
+        if not self._fallback.enabled or fallback_builder is None:
+            self._emit_failure(error)
+            if cause is not None:
+                raise error from cause
+            raise error
+        try:
+            plan = fallback_builder()
+        except PlanFallbackError as fallback_error:
+            self._emit_failure(error)
+            raise fallback_error from error
+        result = PlannerResult(
+            plan=plan,
+            prompt_version=prompt_version,
+            model=self._model,
+            attempts=attempts,
+            latency_ms=(time.perf_counter() - started) * 1000.0,
+            request_id=error.request_id,
+            trace_id=error.trace_id,
+            degraded=True,
+            plan_source="system_default",
+        )
+        self._emit_degraded(error, result)
+        return result
+
+    def _build_fallback_initial(
+        self,
+        data: PlannerInput,
+        *,
+        plan_id: str | None,
+    ) -> RecommendationPlan:
+        modules = set(data.system_capabilities.retrieval_modules)
+        tiger_enabled = RecallPath.TIGER in modules
+        e5_enabled = RecallPath.E5_FAISS in modules
+        if not tiger_enabled and not e5_enabled:
+            raise PlanFallbackError(
+                "cannot build a deterministic fallback plan: the system exposes no "
+                "retrieval module"
+            )
+        query = _truncate_query(data.user_request, self._limits.max_query_chars)
+        payload: dict[str, Any] = {
+            "schema_version": SCHEMA_VERSION,
+            "plan_id": plan_id or _fallback_plan_id("initial", data.user_request),
+            "parent_plan_id": None,
+            "plan_version": 1,
+            "mode": PlanMode.INITIAL.value,
+            "intent": {"intent": "product_recommendation"},
+            "constraints": {"hard": [], "soft": []},
+            "preferences": {"current": [], "historical": [], "negative": [], "priority": []},
+            "retrieval": {
+                "strategy": RetrievalStrategy.HYBRID_BALANCED.value,
+                "tiger": {"enabled": tiger_enabled, "candidate_budget": "standard"},
+                "e5_faiss": {
+                    "enabled": e5_enabled,
+                    "queries": [query] if e5_enabled else [],
+                    "candidate_budget": "standard",
+                },
+            },
+            "ranking": {"rerank_query": query, "priority_attributes": []},
+            "clarification": {"required": False},
+            "assumptions": [
+                *FALLBACK_ASSUMPTIONS,
+                "Hard constraints were not extracted by the Planner",
+            ],
+            "change_summary": [],
+        }
+        return self._validated_fallback_plan(payload, data.system_capabilities)
+
+    def _build_fallback_replan(
+        self,
+        data: ReplanInput,
+        *,
+        plan_id: str | None,
+    ) -> RecommendationPlan:
+        parent = data.previous_plan
+        modules = set(data.system_capabilities.retrieval_modules)
+        tiger_enabled = RecallPath.TIGER in modules
+        e5_enabled = RecallPath.E5_FAISS in modules
+        if not tiger_enabled and not e5_enabled:
+            raise PlanFallbackError(
+                "cannot build a deterministic fallback replan: the system exposes no "
+                "retrieval module"
+            )
+        query = self._fallback_replan_query(data.user_request, parent)
+        payload: dict[str, Any] = {
+            "schema_version": SCHEMA_VERSION,
+            "plan_id": plan_id
+            or _fallback_plan_id("replan", f"{parent.plan_id}\x00{data.user_request}"),
+            "parent_plan_id": parent.plan_id,
+            "plan_version": parent.plan_version + 1,
+            "mode": PlanMode.REPLAN.value,
+            # A deterministic fallback never edits the user's plan semantics: intent,
+            # hard constraints and preferences are copied from the validated parent.
+            "intent": parent.intent.model_dump(mode="json"),
+            "constraints": parent.constraints.model_dump(mode="json"),
+            "preferences": parent.preferences.model_dump(mode="json"),
+            "retrieval": {
+                "strategy": RetrievalStrategy.HYBRID_BALANCED.value,
+                "tiger": {"enabled": tiger_enabled, "candidate_budget": "standard"},
+                "e5_faiss": {
+                    "enabled": e5_enabled,
+                    "queries": [query] if e5_enabled else [],
+                    "candidate_budget": "standard",
+                },
+            },
+            "ranking": {
+                "rerank_query": _truncate_query(
+                    data.user_request, self._limits.max_query_chars
+                ),
+                "priority_attributes": list(parent.ranking.priority_attributes),
+            },
+            "clarification": {"required": False},
+            "assumptions": [
+                *FALLBACK_ASSUMPTIONS,
+                "Previous plan's hard constraints and preferences are preserved unchanged",
+            ],
+            "change_summary": [
+                "deterministic fallback: retry balanced retrieval with a new query"
+            ],
+        }
+        plan = self._validated_fallback_plan(payload, data.system_capabilities)
+        validate_replan_preserves_hard_constraints(parent, plan)
+        self._validate_replan_changes_queries(plan, parent)
+        return plan
+
+    def _validated_fallback_plan(
+        self,
+        payload: dict[str, Any],
+        capabilities: SystemCapabilities,
+    ) -> RecommendationPlan:
+        try:
+            plan = RecommendationPlan.model_validate(payload)
+            self._validate_capabilities(plan, capabilities)
+            self._validate_limits(plan)
+        except (ValidationError, ValueError) as exc:
+            raise PlanFallbackError(
+                f"deterministic fallback plan is invalid: {_format_validation_error(exc)}"
+            ) from exc
+        return plan
+
+    def _fallback_replan_query(
+        self,
+        user_request: str,
+        parent: RecommendationPlan,
+    ) -> str:
+        parent_queries = {
+            _normalize_query(query) for query in parent.retrieval.e5_faiss.queries
+        }
+        base = _truncate_query(
+            user_request, max(1, self._limits.max_query_chars - 24)
+        )
+        for suffix in _FALLBACK_SUFFIXES:
+            candidate = _truncate_query(
+                f"{base} {suffix}", self._limits.max_query_chars
+            )
+            if _normalize_query(candidate) not in parent_queries:
+                return candidate
+        raise PlanFallbackError(
+            "cannot build a deterministic fallback replan: every fallback query repeats "
+            "a query from the previous plan"
+        )
 
     # -- validation helpers --------------------------------------------------
     @staticmethod
@@ -527,6 +787,35 @@ class Planner:
                 error.to_dict(),
                 stage="planner",
             )
+
+    def _emit_degraded(
+        self,
+        error: PlanGenerationError,
+        result: PlannerResult,
+    ) -> None:
+        payload: dict[str, Any] = {
+            "degraded": True,
+            "plan_source": result.plan_source,
+            "plan_generated": True,
+            "mode": result.plan.mode.value,
+            "plan_id": result.plan.plan_id,
+            "assumptions": result.plan.assumptions,
+            "attempts": result.attempts,
+            "prompt_version": result.prompt_version,
+            "error": error.to_dict(),
+        }
+        _LOGGER.warning(
+            "planner degraded to a deterministic system-default plan",
+            extra={
+                "mode": result.plan.mode.value,
+                "plan_id": result.plan.plan_id,
+                "plan_source": result.plan_source,
+                "error_kind": error.error_kind,
+                "attempts": result.attempts,
+            },
+        )
+        if self._trace is not None:
+            self._trace.emit("planner.plan_degraded", payload, stage="planner")
 
 
 def planner_capabilities(

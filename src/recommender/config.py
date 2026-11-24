@@ -228,6 +228,10 @@ class ControllerBudgetConfig(_StrictModel):
 class QualityThresholds(_StrictModel):
     required_count: int = Field(default=5, ge=1)
     min_valid_candidates: int = Field(default=3, ge=0)
+    # Decision D8 (initial engineering value, not calibrated): a quality STOP needs at
+    # least this many *valid* Judgment results (parsed, schema-valid, aligned with the
+    # ranked candidates). Two valid Judgments must not satisfy quality by accident.
+    min_judgments: int = Field(default=3, ge=0)
     min_mean_rerank_score: float | None = None
     max_unknown_attribute_ratio: float = Field(default=0.5, ge=0.0, le=1.0)
     min_diversity: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -243,9 +247,34 @@ class QualityThresholds(_StrictModel):
 
 
 class LoopGuardConfig(_StrictModel):
+    """Loop protection thresholds.
+
+    Decision D5 removed ``duplicate_query_similarity``: the State only stores SHA-256
+    query hashes, so a semantic-similarity threshold could never be executed. Duplicate
+    detection is strict hash equality over NFKC-normalized query text
+    (``controller.controller.normalize_query``).
+    """
+
     max_replan_rounds: int = Field(default=2, ge=0)
     max_rounds: int = Field(default=3, ge=1)
-    duplicate_query_similarity: float = Field(default=0.95, ge=0.0, le=1.0)
+
+
+class PlannerFallbackConfig(_StrictModel):
+    """Planner degradation policy (decision D7).
+
+    ``enabled=False`` (default) makes a Planner failure a structured
+    :class:`~recommender.planner.planner.PlanGenerationError`; the system never invents
+    a plan silently. ``enabled=True`` explicitly opts into a deterministic, balanced
+    system-default plan marked ``degraded`` / ``plan_source=system_default`` in its
+    ``assumptions`` and trace events.
+    """
+
+    enabled: bool = False
+    strategy: Literal["balanced"] = "balanced"
+
+
+class PlannerConfig(_StrictModel):
+    fallback: PlannerFallbackConfig = PlannerFallbackConfig()
 
 
 class ControllerConfig(_StrictModel):
@@ -295,6 +324,7 @@ class AppConfig(_StrictModel):
     generation: GenerationConfig = GenerationConfig()
     retrieval: RetrievalConfig
     controller: ControllerConfig = ControllerConfig()
+    planner: PlannerConfig = PlannerConfig()
     memory: MemoryConfig
     project_root: Path = Field(default_factory=lambda: PROJECT_ROOT, exclude=True)
 

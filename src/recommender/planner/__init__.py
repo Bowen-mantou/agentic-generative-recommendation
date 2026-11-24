@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from recommender.planner.planner import (
+    FALLBACK_ASSUMPTIONS,
+    PlanFallbackError,
     PlanGenerationError,
     Planner,
     PlannerResult,
@@ -20,10 +22,12 @@ from recommender.planner.prompts import (
 )
 
 __all__ = [
+    "FALLBACK_ASSUMPTIONS",
     "INITIAL_PROMPT_VERSION",
     "REPLAN_PROMPT_VERSION",
     "ControllerFeedback",
     "ExecutionFeedback",
+    "PlanFallbackError",
     "PlanGenerationError",
     "Planner",
     "PlannerInput",

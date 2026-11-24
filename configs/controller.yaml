@@ -11,6 +11,10 @@ controller:
   quality:
     required_count: 5
     min_valid_candidates: 3
+    # Decision D8: a quality STOP needs at least this many valid Judgment results
+    # (parsed, schema-valid, aligned with ranked candidates). Initial engineering value,
+    # not calibrated. 2 valid Judgments must not satisfy quality.
+    min_judgments: 3
     min_mean_rerank_score: null
     max_unknown_attribute_ratio: 0.5
     min_diversity: null
@@ -19,4 +23,18 @@ controller:
   loop_guard:
     max_replan_rounds: 2
     max_rounds: 3
-    duplicate_query_similarity: 0.95
+    # Decision D5: `duplicate_query_similarity` was removed. The recommendation state
+    # stores only SHA-256 query hashes, so a similarity threshold could never be
+    # executed; duplicate detection is strict hash equality over NFKC-normalized
+    # (full-width -> ASCII, casefold, whitespace-collapsed) query text.
+
+# Planner degradation policy (decision D7).
+# enabled=false (default): a Planner/Replanner failure raises `PlanGenerationError`;
+# no plan is fabricated and the workflow stops with `api_failed` / failed_component.
+# enabled=true: after the bounded retries the Planner returns a deterministic balanced
+# plan marked degraded=true / plan_source=system_default in `assumptions` and trace
+# events. The degraded plan is never reported as a Planner API success.
+planner:
+  fallback:
+    enabled: false
+    strategy: balanced

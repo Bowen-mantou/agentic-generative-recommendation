@@ -28,12 +28,14 @@ from recommender.api.deepseek import (
     DeepSeekTruncatedError,
     parse_json_content,
 )
-from recommender.config import load_settings
+from recommender.config import PlannerFallbackConfig, load_settings
 from recommender.planner import (
+    FALLBACK_ASSUMPTIONS,
     INITIAL_PROMPT_VERSION,
     REPLAN_PROMPT_VERSION,
     ControllerFeedback,
     ExecutionFeedback,
+    PlanFallbackError,
     PlanGenerationError,
     Planner,
     PlannerInput,
@@ -670,4 +672,173 @@ def test_planner_uses_request_context_ids() -> None:
         result = _planner(client).plan_initial(_planner_input())
     assert result.request_id == "req_ctx"
     assert result.trace_id == "tr_ctx"
+    http.close()
+
+
+# -- D5: strict query normalisation on the Replanner's "new query" check ------
+
+
+def test_replanner_rejects_full_width_case_variant_of_previous_query() -> None:
+    """D5: a full-width/whitespace/case variant is still the same query."""
+    parent = _parent_plan()
+    payload = replan_payload(
+        parent=parent,
+        queries=["ＤＡＩＬＹ  ＦＡＣＩＡＬ\tmoisturizer   under 30"],
+    )
+    server = _PlanServer([_response(json.dumps(payload)) for _ in range(2)])
+    client, _, http = make_client(server)
+    with pytest.raises(PlanGenerationError) as excinfo:
+        _planner(client).plan_replan(_replan_input())
+    assert "at least one new query" in excinfo.value.last_error
+    http.close()
+
+
+# -- D7: Planner degradation policy (default structured failure, opt-in fallback) --
+
+
+def test_planner_fallback_is_disabled_by_default() -> None:
+    server = _PlanServer([_response("not json"), _response("still not json")])
+    client, _, http = make_client(server)
+    planner = _planner(client)
+    assert planner.fallback.enabled is False
+    with pytest.raises(PlanGenerationError):
+        planner.plan_initial(_planner_input())
+    http.close()
+
+
+def test_planner_fallback_enabled_returns_deterministic_marked_plan() -> None:
+    server = _PlanServer(
+        [_response("not json"), _response("still not json")] * 2
+    )
+    client, _, http = make_client(server)
+    planner = Planner(
+        client,
+        limits=PlannerLimits(max_e5_queries=5, max_query_chars=300),
+        fallback=PlannerFallbackConfig(enabled=True, strategy="balanced"),
+    )
+
+    first = planner.plan_initial(_planner_input(plan_id="plan_fixed"))
+    second = planner.plan_initial(_planner_input(plan_id="plan_fixed"))
+
+    assert first.degraded is True
+    assert first.plan_source == "system_default"
+    assert first.attempts == 2
+    assert first.input_tokens is None and first.output_tokens is None
+    assert first.plan.plan_id == "plan_fixed"
+    assert first.plan.mode is PlanMode.INITIAL
+    assert first.plan.retrieval.strategy.value == "hybrid_balanced"
+    assert first.plan.retrieval.e5_faiss.enabled is True
+    assert first.plan.retrieval.e5_faiss.queries == ["我想买一款30美元以内、质地清爽的日常面霜"]
+    # The degradation is visible inside the plan itself (Plan has no `degraded` field).
+    for assumption in FALLBACK_ASSUMPTIONS:
+        assert assumption in first.plan.assumptions
+    assert any("Hard constraints were not extracted" in note for note in first.plan.assumptions)
+    assert first.plan.constraints.hard == []
+    assert first.plan.change_summary == []
+    # Deterministic: same input -> byte-identical plan.
+    assert first.plan.model_dump(mode="json") == second.plan.model_dump(mode="json")
+    http.close()
+
+
+def test_planner_fallback_uses_deterministic_plan_id_when_input_has_none() -> None:
+    server = _PlanServer([_response("not json"), _response("still not json")] * 2)
+    client, _, http = make_client(server)
+    planner = Planner(
+        client,
+        limits=PlannerLimits(max_e5_queries=5, max_query_chars=300),
+        fallback=PlannerFallbackConfig(enabled=True),
+    )
+
+    first = planner.plan_initial(_planner_input(plan_id=""))
+    second = planner.plan_initial(_planner_input(plan_id=""))
+
+    assert first.plan.plan_id.startswith("plan_fallback_")
+    assert first.plan.plan_id == second.plan.plan_id
+    http.close()
+
+
+def test_planner_fallback_applies_to_api_errors_too() -> None:
+    server = _PlanServer([_error_response(401, "invalid api key")])
+    client, _, http = make_client(server, max_retries=0)
+    planner = Planner(
+        client,
+        limits=PlannerLimits(max_e5_queries=5, max_query_chars=300),
+        fallback=PlannerFallbackConfig(enabled=True),
+    )
+
+    result = planner.plan_initial(_planner_input(plan_id="plan_fixed"))
+
+    assert result.degraded is True
+    assert result.plan_source == "system_default"
+    assert "Planner API unavailable" in result.plan.assumptions
+    http.close()
+
+
+def test_planner_fallback_replan_preserves_parent_constraints_and_changes_query() -> None:
+    server = _PlanServer([_response("not json"), _response("still not json")] * 2)
+    client, _, http = make_client(server)
+    planner = Planner(
+        client,
+        limits=PlannerLimits(max_e5_queries=5, max_query_chars=300),
+        fallback=PlannerFallbackConfig(enabled=True),
+    )
+
+    first = planner.plan_replan(_replan_input())
+    second = planner.plan_replan(_replan_input())
+
+    parent = _parent_plan()
+    plan = first.plan
+    assert first.degraded is True
+    assert plan.mode is PlanMode.REPLAN
+    assert plan.parent_plan_id == parent.plan_id
+    assert plan.plan_version == parent.plan_version + 1
+    assert plan.constraints.model_dump() == parent.constraints.model_dump()
+    assert plan.preferences.model_dump() == parent.preferences.model_dump()
+    assert plan.change_summary
+    assert plan.retrieval.e5_faiss.queries
+    assert plan.retrieval.e5_faiss.queries != parent.retrieval.e5_faiss.queries
+    assert first.plan.model_dump(mode="json") == second.plan.model_dump(mode="json")
+    http.close()
+
+
+def test_planner_fallback_without_retrieval_modules_raises_plan_fallback_error() -> None:
+    server = _PlanServer([_response("not json"), _response("still not json")])
+    client, _, http = make_client(server)
+    planner = Planner(
+        client,
+        limits=PlannerLimits(max_e5_queries=5, max_query_chars=300),
+        fallback=PlannerFallbackConfig(enabled=True),
+    )
+
+    with pytest.raises(PlanFallbackError) as excinfo:
+        planner.plan_initial(
+            PlannerInput(
+                user_request="我想买一款30美元以内的日常面霜",
+                plan_id="plan_fixed",
+                system_capabilities=SystemCapabilities(retrieval_modules=[]),
+            )
+        )
+    assert isinstance(excinfo.value.__cause__, PlanGenerationError)
+    http.close()
+
+
+def test_planner_retry_success_is_not_marked_degraded() -> None:
+    """D4/D7: a retried-then-successful API call must not stop or degrade the plan."""
+    server = _PlanServer(
+        [_error_response(429, "rate limited"), _response(json.dumps(plan_payload()))]
+    )
+    client, _, http = make_client(server)
+    planner = Planner(
+        client,
+        limits=PlannerLimits(max_e5_queries=5, max_query_chars=300),
+        fallback=PlannerFallbackConfig(enabled=True),
+    )
+
+    result = planner.plan_initial(_planner_input(plan_id="plan_fixed"))
+
+    assert result.degraded is False
+    assert result.plan_source is None
+    assert result.plan.plan_id == "plan_fixed"
+    assert result.plan.retrieval.e5_faiss.queries == ["daily facial moisturizer under 30"]
+    assert len(server.requests) == 2
     http.close()

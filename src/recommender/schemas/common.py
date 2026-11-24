@@ -118,6 +118,18 @@ class StopReason(str, Enum):
     MAX_ROUNDS_REACHED = "max_rounds_reached"
     NO_VALID_CANDIDATES = "no_valid_candidates"
     RETRIEVAL_DEGRADED = "retrieval_degraded"
+    # Decision D4 (2026-11-24): a Planner / Judgment / Generator call that failed after
+    # its bounded retries is its own stop reason. It must never be reported as a
+    # retrieval degradation, an empty candidate list or a quality pass.
+    API_FAILED = "api_failed"
+
+
+class FailedComponent(str, Enum):
+    """Which model-backed component exhausted its retries (decision D4)."""
+
+    PLANNER = "planner"
+    JUDGMENT = "judgment"
+    GENERATOR = "generator"
 
 
 class MemoryType(str, Enum):
