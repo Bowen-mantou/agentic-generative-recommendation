@@ -300,7 +300,7 @@ DeepSeek Planner、Judgment、Generator 使用独立 Prompt、独立 Pydantic Sc
 6. DeepSeek 具体模型 ID、API 参数和 JSON 输出校验方式。（已验证：`deepseek-flash`、`deepseek-v4-pro`；JSON mode + 真实 Planner/Judgment/Pilot Query 调用通过）
 7. Mem0 OSS / Qdrant / SQLite 的部署方式和 SDK 版本。（部分验证：Qdrant v1.20.2 + mem0ai 2.2.1 + multilingual-e5-base，见 `docs/phase6/D9_MEMORY_DEPLOYMENT.md`；Memory.add 待 Phase 6）
 8. Controller 阈值和预算值如何由验证集确定。（待 Phase 5/7；当前值均标注未校准）
-9. 评测数据集协议（时间截点、Profile、Query、Auditor、冻结）。（已进入 Pilot：2,685 时间审计、100 条 Query；人工复核与全量冻结待做，见 `docs/phase7/PILOT_REPORT_V0.1.md`）
+9. 评测数据集协议（时间截点、Profile、Query、Auditor、冻结）。（已完成 v1.0：2,685 时间审计、2,551 Query、528 人工复核、最终 2,224 条冻结；见 `docs/STATUS.md`）
 
 ## 9. Definition of Done
 

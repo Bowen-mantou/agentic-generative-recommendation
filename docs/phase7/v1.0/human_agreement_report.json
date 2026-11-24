@@ -1,0 +1,23 @@
+{
+  "dataset_version": "v1.0",
+  "reviewed_rows": 528,
+  "human_decisions": {
+    "FAIL": 461,
+    "PASS": 67
+  },
+  "audit_status_by_human_decision": {
+    "ERROR|FAIL": 134,
+    "FAIL|FAIL": 51,
+    "PASS|PASS": 67,
+    "REVIEW|FAIL": 276
+  },
+  "agreement_count": 528,
+  "agreement_rate": 1.0,
+  "flagged_rows": 461,
+  "flagged_human_rejected": 461,
+  "flagged_human_accept_rate": 0.0,
+  "sampled_pass_rows": 67,
+  "sampled_pass_human_approved": 67,
+  "sampled_pass_approval_rate": 1.0,
+  "numeric_exclusions_from_human_pass": 0
+}

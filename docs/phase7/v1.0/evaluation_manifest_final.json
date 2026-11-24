@@ -1,0 +1,96 @@
+{
+  "dataset_version": "v1.0",
+  "created_at": "2026-11-24T15:47:49.337116+00:00",
+  "source_dataset": "Amazon Reviews 2023",
+  "category": "All_Beauty",
+  "split_method": "temporal",
+  "profile_version": "v1",
+  "query_generator": {
+    "model": "deepseek-flash",
+    "prompt_version": "query_generator_v1",
+    "prompt_hash": "4ce3807e6425c69d",
+    "temperature": 0.0
+  },
+  "query_auditor": {
+    "model": "deepseek-flash",
+    "prompt_version": "query_auditor_v1",
+    "prompt_hash": "45983f014da1ec6e"
+  },
+  "embedding_model": "intfloat/e5-base-v2",
+  "catalog_version": "all_beauty_v2",
+  "random_seed": 42,
+  "target_isolated": true,
+  "is_synthetic_query": true,
+  "counts": {
+    "dataset_version": "v1.0",
+    "raw_samples": 2685,
+    "review_queue_rows": 528,
+    "human_pass": 67,
+    "human_fail": 461,
+    "included_samples": 2224,
+    "excluded_samples": 461,
+    "exclusion_reasons": {
+      "human_fail": 461
+    },
+    "human_review_completed": true,
+    "frozen": true,
+    "note": "Only human PASS + generated query + validation pass are included; insufficient_profile rows cannot be rescued."
+  },
+  "files": {
+    "test_samples": "b7fc3d057b49d423d1e961b7604f1c6597be0f49d981827463c90bc4d37434d3",
+    "target_labels": "6c70c4891f08c725fd83f95006863f0a9c974b3b665f1d741dce42c3415b6fb6",
+    "test_profiles": "55ea989bc2ad0c7e884e82446192f961ac01c58638e806b4b2672ba8657b6597",
+    "test_queries": "572f8269cb08db41095f9ca80969f3c3db9f737ecd9ba4869870998a39e169e7",
+    "test_audits": "2ce1cbcf328a945df72cab68347b8e6fa6b1d2ecbc7e1cfc3c824772c598e17e",
+    "coverage_report": "55134e3fcd95be8886029e04fbc1195fe73ed11e56e148920edd84224ba5921f",
+    "leakage_check": "132cd3184b9d3c29579dc833a3bf7d3cbdd25af3aee46d4373f21365b2954e4e",
+    "quality_report": "47e471f9c1f8336ca412ec31f32fb04b2eb474a07f809cb383d2608c92524ef4",
+    "human_review_queue": "892526fa82ccac421217836702c9f4928a90681150289941e7ac709558a466bd",
+    "samples/final_samples.jsonl": "807bafed01b6cba701ec9981a3a16a4c878c692ada125433570db8e534d9211d",
+    "labels/final_target_labels.jsonl": "ebb64813fc38949baef21a03e70c32c677afd67194aaa7b1921f4a93309a9d2d",
+    "reports/human_agreement_report.json": "446f86b68931ab9bcf9d06af8ae1d9829ec9bd310cb9cc55ff2f8f1eda3c11af",
+    "reports/final_coverage_report.json": "3de7385fe82063f155df337af6d25b5938fde6f8ff02a20108ecba9bd7ec70db",
+    "human_review/human_review_v1.0_filled.csv": "b5266ee6edcdbb3a87ddab26e12bd8c8aeca6d2aedb72b8111aa56f828c9ab33"
+  },
+  "code_commit": "422e4a1",
+  "human_review_completed": true,
+  "frozen": true,
+  "human_review": {
+    "dataset_version": "v1.0",
+    "reviewed_rows": 528,
+    "human_decisions": {
+      "FAIL": 461,
+      "PASS": 67
+    },
+    "audit_status_by_human_decision": {
+      "ERROR|FAIL": 134,
+      "FAIL|FAIL": 51,
+      "PASS|PASS": 67,
+      "REVIEW|FAIL": 276
+    },
+    "agreement_count": 528,
+    "agreement_rate": 1.0,
+    "flagged_rows": 461,
+    "flagged_human_rejected": 461,
+    "flagged_human_accept_rate": 0.0,
+    "sampled_pass_rows": 67,
+    "sampled_pass_human_approved": 67,
+    "sampled_pass_approval_rate": 1.0,
+    "numeric_exclusions_from_human_pass": 0
+  },
+  "final_counts": {
+    "dataset_version": "v1.0",
+    "raw_samples": 2685,
+    "review_queue_rows": 528,
+    "human_pass": 67,
+    "human_fail": 461,
+    "included_samples": 2224,
+    "excluded_samples": 461,
+    "exclusion_reasons": {
+      "human_fail": 461
+    },
+    "human_review_completed": true,
+    "frozen": true,
+    "note": "Only human PASS + generated query + validation pass are included; insufficient_profile rows cannot be rescued."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "dataset_version": "v1.0",
+  "raw_samples": 2685,
+  "review_queue_rows": 528,
+  "human_pass": 67,
+  "human_fail": 461,
+  "included_samples": 2224,
+  "excluded_samples": 461,
+  "exclusion_reasons": {
+    "human_fail": 461
+  },
+  "human_review_completed": true,
+  "frozen": true,
+  "note": "Only human PASS + generated query + validation pass are included; insufficient_profile rows cannot be rescued."
+}

@@ -55,7 +55,7 @@ replaced with a mock.
 | Phase 4 — TIGER | ⛔ **No-Go** | Real RQ-VAE + autoregressive generator trained; Recall@10 0.15%/0.25%/0.07% (A1/B1/B2) vs popularity 0.34–0.82% and E5-profile 2.9–4.4%. No full training. [Report](docs/phase4/D1_B1_B2_GATE_REPORT.md) |
 | Phase 5 — Planner / Judgment / Controller | ✅ implemented + hardened | DeepSeek client, Planner/Replanner, per-product Judgment, LangGraph workflow; real end-to-end CLI wiring still pending |
 | Phase 6 — Generator / Memory | 🟡 partial | Qdrant + multilingual E5 deployment validated; Generator and Mem0 adapter not implemented |
-| Phase 7 — evaluation | 🟡 pilot built | Protocol implemented; temporal audit 2,685/2,685; 100 synthetic queries (82 PASS / 14 REVIEW / 1 FAIL / 3 ERROR); human review pending; no frozen test set. [Pilot report](docs/phase7/PILOT_REPORT_V0.1.md) |
+| Phase 7 — evaluation | ✅ v1.0 frozen | 2,685 temporal samples recovered; 2,551 queries; 528 human-reviewed (67 PASS / 461 FAIL); **2,224 final samples frozen**; 0 leakage. [Final report](docs/phase7/v1.0/final_coverage_report.json) |
 
 Test snapshot: **260 passed / 14 skipped** locally; **271 passed / 3 skipped** on the
 CPU server (LangGraph integration tests included). Unit tests run without GPUs,
@@ -146,7 +146,7 @@ tests/integration/ model/index/service tests (opt-in; skipped by default)
 
 - End-to-end real CLI (`Planner → E5 → pool → reranker → Judgment → LangGraph controller`) is not wired.
 - Phase 6 Generator and Mem0 adapter are not implemented; `Memory.add` is untested.
-- Controller thresholds are uncalibrated (`calibrated: false`); the Phase 7 pilot has 20 human-review rows pending and no frozen test set.
+- Controller thresholds are uncalibrated (`calibrated: false`); the Phase 7 v1.0 evaluation set is frozen (2,224 samples), but full Reranker comparison and end-to-end service wiring are still pending.
 - TIGER is No-Go at current data scale and is not used as the primary recall path.
 
 ## Limitations

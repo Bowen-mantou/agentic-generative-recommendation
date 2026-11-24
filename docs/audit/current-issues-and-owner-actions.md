@@ -14,7 +14,7 @@
 | Phase 4（TIGER） | **D11 Gate = No-Go**；A1/B1/B2 均未超过热度基线，Hybrid 均低于 E5-only；**未全量训练**，Phase 4 不标记完成 |
 | Phase 5（Planner/Judgment/Controller） | 代码、D3–D8 硬化、LangGraph 图级运行、260 单测完成；**真实 E2E（DeepSeek+E5+Reranker+Judgment）未接线** |
 | Phase 6（Generator/Memory） | 只有 D9 基础设施（Qdrant 容器 + multilingual-e5-base 验证）与占位目录；**Generator、Mem0 Adapter 未实现**，`Memory.add` 未验证 |
-| Phase 7（评测） | 协议已实现；2,685 条时间审计完成；100 条 Pilot（82 PASS/14 REVIEW/1 FAIL/3 ERROR，0 泄漏）；**20 条人工复核待做**，未冻结 |
+| Phase 7（评测） | v1.0 已冻结：2,685 时间审计、2,551 Query、528 人工复核（67 PASS/461 FAIL）、最终 2,224 条；0 泄漏；Reranker 全量与统计区间待做 |
 | 测试 | 本地 260 passed / 14 skipped；服务器 271 passed / 3 skipped（LangGraph 真实运行） |
 | 服务器服务 | `agr-qdrant` 容器运行中（v1.20.2，127.0.0.1:6333，空库，Up 4h） |
 
@@ -47,13 +47,12 @@
   Phase 6 的 Generator/Memory 也无法接入完整链路。
 - **需要负责人**：O4（真实 API 使用与预算上限）。
 
-#### P0-3 D10 人工 Query 集尚未标注（Pilot 已构建，待人工复核）
+#### P0-3 D10 人工 Query 集：已复核并冻结 v1.0（已解决）
 
-- **事实**：D10 协议已工程实现；现有 2,685 条 TIGER 测试样本已 100% 恢复，100 条 Pilot 已生成
-  97 条 synthetic Query（82 PASS / 14 REVIEW / 1 FAIL / 3 ERROR），0 泄漏；但
-  **20 条人工复核队列尚未处理**（`human_audit.csv` 决策列全空），全量 2,685 条未生成，数据集未冻结。
+- **事实**：2,685 条时间样本全部恢复；全量 2,551 Query；人工复核 528 条已返回并应用
+  （67 PASS / 461 FAIL）；最终 2,224 条纳入、461 条排除；0 泄漏；manifest 已冻结 v1.0。
   规范见 [EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md](../phase7/EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md)，
-  结果见 [PILOT_REPORT_V0.1.md](../phase7/PILOT_REPORT_V0.1.md)。
+  现状见 [STATUS.md](../STATUS.md)。
 - **影响**：Phase 7 的 E5 文本召回、Fusion、Reranker、Judgment、Planner 质量评估全部缺少主评测集；
   不得用 AI 自动生成的标签冒充人工相关性标注。
 - **需要负责人**：O3（标注人员、数量、语言、截止时间）。

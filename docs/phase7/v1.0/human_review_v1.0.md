@@ -1,5 +1,7 @@
 # Evaluation Dataset v1.0 — Human Review Queue
 
+> **RESULTS APPLIED:** the returned decisions are in [`human_review_v1.0_filled.csv`](human_review_v1.0_filled.csv); summary in [`human_agreement_report.json`](human_agreement_report.json). This table is the blank original queue.
+
 - Source candidate: `/mnt/agr-data/evaluation/v1.0`
 - Rows: **528**
 - Status mix: {'ERROR': 134, 'FAIL': 51, 'PASS': 67, 'REVIEW': 276}

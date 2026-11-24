@@ -1,5 +1,5 @@
 {
-  "dataset": "v1.0 PASS subset",
+  "dataset": "v1.0 final (2,224 human-validated)",
   "note": "recall-stage only; Reranker comparison not included in this pilot run",
   "samples": 2224,
   "methods": {
