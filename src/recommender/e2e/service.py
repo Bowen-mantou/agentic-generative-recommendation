@@ -8,6 +8,7 @@ into one command. Target labels and evaluation data are never part of this path.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -519,6 +520,29 @@ def run_e2e(
                 },
                 "recommendation": generated.model_dump(mode="json"),
                 "generator_model": generator_model,
+                "generator_fallback": generator_model == "fallback_template",
+                "memory_backend": memory_health.get("backend"),
+                "degraded": bool(
+                    not memory_health.get("available", False)
+                    or generator_model == "fallback_template"
+                ),
+                "degraded_reason": [
+                    reason
+                    for reason in (
+                        None
+                        if memory_health.get("available", False)
+                        else f"memory:{memory_health.get('backend', 'unavailable')}",
+                        None
+                        if generator_model != "fallback_template"
+                        else "generator:fallback_template",
+                    )
+                    if reason is not None
+                ],
+                "forced_branch_test": False,
+                "runtime": "langgraph"
+                if importlib.util.find_spec("langgraph") is not None
+                else "python_fallback",
+                "max_replans_reached": state.current_round >= 2,
                 "timing_ms": {
                     "memory": round(memory_ms, 1),
                     "workflow": round(workflow_ms, 1),

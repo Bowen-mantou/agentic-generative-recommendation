@@ -30,8 +30,8 @@
 | Phase 2 Fusion + 约束 | ✅ | 两级 RRF、三态约束、候选池真实数据演示 |
 | Phase 3 Qwen3-Reranker | ✅ | Transformers 原生 CPU，真实候选池验证；分数非概率 |
 | Phase 4 TIGER | ⛔ No-Go | A1/B1/B2 均未过 D11；Phase 4 未完成、未全量训练 |
-| Phase 5 Planner/Judgment/Controller | 🟡 组件完成、E2E 未接 | DeepSeek 客户端、Planner/Replanner、逐商品 Judgment、LangGraph 1.2.24 + 图级测试 |
-| Phase 6 Generator/Memory | 🟡 部分 | Qdrant + multilingual-e5-base 部署验证；Mem0 Adapter、Generator 未实现 |
+| Phase 5 Planner/Judgment/Controller | ✅ E2E 通过 | DeepSeek Planner/Judgment + LangGraph 真实运行；STOP/REPLAN trace |
+| Phase 6 Generator/Memory | ✅ 本轮实现 | DeepSeek Generator + Mem0 Adapter；add/read/user_id 隔离与 E2E 验证 |
 | Phase 7 评测数据 | ✅ v1.0 冻结 | 2,224 条最终样本；528 条人工复核完成；manifest 冻结 |
 | Phase 7 三路评测 | 🟡 Recall 阶段 | 2,224 条 TIGER/E5/Hybrid Recall 已跑；全量 Reranker、cluster bootstrap 未跑 |
 

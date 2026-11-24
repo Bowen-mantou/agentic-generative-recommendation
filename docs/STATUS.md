@@ -38,7 +38,7 @@
 |---|---|---:|---|
 | stop run 1（新用户，空记忆） | quality_satisfied，5 推荐 | 61.6 s | `docs/e2e/run_stop_initial_*` |
 | stop run 2（feedback 后） | quality_satisfied，5 推荐，1 memory hit | 57.9 s | `docs/e2e/run_stop_previous_*` |
-| stop run 3（重复） | quality_satisfied，5 推荐，1 memory hit | 61.9 s | `docs/e2e/run_stop_latest_*` |
+| stop run 3（重复） | quality_satisfied，5 推荐，1 memory hit | 66.5 s | `docs/e2e/run_stop_latest_*` |
 | REPLAN run | 第一轮 replan、第二轮 budget_exhausted，0 推荐 | 25.3 s | `docs/e2e/run_replan_*` |
 | feedback write | add + read back 1 条；其他用户 0 条 | 14.1 s | `docs/e2e/feedback_writeback.json` |
 

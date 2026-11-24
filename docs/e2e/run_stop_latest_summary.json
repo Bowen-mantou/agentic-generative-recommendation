@@ -1,6 +1,6 @@
 {
-  "request_id": "req_84f93c1bc45e4cfab45e4cc7fdba0543",
-  "trace_id": "tr_18a534635e454a23a09593a6c8cd3f04",
+  "request_id": "req_e84061a4ed904d3dbc0582f53efa2d57",
+  "trace_id": "tr_1ad4ef4209904be0ab0dacb29aa3b7fc",
   "user_id_hash": "037b10c24e56",
   "query": "fragrance-free moisturizer for sensitive skin",
   "memory": {
@@ -38,14 +38,14 @@
       "initialized": true
     },
     "hits": 1,
-    "timing_ms": 14197.8,
+    "timing_ms": 8899.5,
     "texts": [
       "User gave explicit positive feedback for product B07N5B8WWR. Note: Liked the fragrance-free formula"
     ]
   },
   "plan": {
     "schema_version": "1.0",
-    "plan_id": "plan_c2efb94fde3a",
+    "plan_id": "plan_e83f7ef787b9",
     "parent_plan_id": null,
     "plan_version": 1,
     "mode": "initial",
@@ -81,7 +81,7 @@
         "for sensitive skin"
       ],
       "historical": [
-        "prefers fragrance-free formulas"
+        "liked fragrance-free formula"
       ],
       "negative": [],
       "priority": [
@@ -100,8 +100,7 @@
         "enabled": true,
         "queries": [
           "fragrance-free moisturizer for sensitive skin",
-          "gentle unscented face moisturizer sensitive skin",
-          "hypoallergenic fragrance-free skin cream"
+          "gentle unscented face moisturizer sensitive skin"
         ],
         "candidate_budget": "standard"
       }
@@ -124,7 +123,7 @@
     "change_summary": []
   },
   "retrieval": {
-    "eligible": 113,
+    "eligible": 78,
     "unverified": 0,
     "rejected": 0
   },
@@ -138,8 +137,16 @@
       "score": 0.9988167881965637
     },
     {
+      "product_id": "B086D9D35V",
+      "score": 0.9985170960426331
+    },
+    {
       "product_id": "B001FYT87G",
       "score": 0.9985141158103943
+    },
+    {
+      "product_id": "B01G09X1PK",
+      "score": 0.9971103072166443
     },
     {
       "product_id": "B01GUIQVZ8",
@@ -155,26 +162,18 @@
     },
     {
       "product_id": "B002SPZ29E",
-      "score": 0.9958200454711914
+      "score": 0.9958199262619019
     },
     {
       "product_id": "B0147KM3ZI",
       "score": 0.9953532218933105
-    },
-    {
-      "product_id": "B00YF3J4OG",
-      "score": 0.9910234212875366
-    },
-    {
-      "product_id": "B013THQAAO",
-      "score": 0.9885828495025635
     }
   ],
   "judgments": [
     {
       "product_id": "B07N5B8WWR",
       "match": "partial_match",
-      "uncertainty": "medium"
+      "uncertainty": "high"
     },
     {
       "product_id": "B014T3QBLK",
@@ -182,9 +181,19 @@
       "uncertainty": "medium"
     },
     {
+      "product_id": "B086D9D35V",
+      "match": "direct_match",
+      "uncertainty": "low"
+    },
+    {
       "product_id": "B001FYT87G",
       "match": "direct_match",
       "uncertainty": "low"
+    },
+    {
+      "product_id": "B01G09X1PK",
+      "match": "partial_match",
+      "uncertainty": "medium"
     },
     {
       "product_id": "B01GUIQVZ8",
@@ -210,16 +219,6 @@
       "product_id": "B0147KM3ZI",
       "match": "partial_match",
       "uncertainty": "medium"
-    },
-    {
-      "product_id": "B00YF3J4OG",
-      "match": "partial_match",
-      "uncertainty": "medium"
-    },
-    {
-      "product_id": "B013THQAAO",
-      "match": "partial_match",
-      "uncertainty": "medium"
     }
   ],
   "controller": {
@@ -228,14 +227,14 @@
     "quality_satisfied": true,
     "budget_exhausted": false,
     "selected_products": [
-      "B07N5B8WWR",
       "B014T3QBLK",
+      "B086D9D35V",
       "B001FYT87G",
-      "B01GUIQVZ8",
-      "B01MG4BD5U"
+      "B01G09X1PK",
+      "B01GUIQVZ8"
     ],
     "reasons": [
-      "quality satisfied: valid=113 >= required=5",
+      "quality satisfied: valid=78 >= required=5",
       "valid judgments=10 >= min_judgments=3",
       "hard constraints satisfied with no unknown/failed check",
       "quality thresholds are uncalibrated (config.controller.quality.calibrated=false)"
@@ -243,44 +242,38 @@
     "rounds": 1
   },
   "recommendation": {
-    "request_id": "req_84f93c1bc45e4cfab45e4cc7fdba0543",
+    "request_id": "req_e84061a4ed904d3dbc0582f53efa2d57",
     "recommendations": [
       {
         "rank": 1,
-        "product_id": "B07N5B8WWR",
-        "title": "Facial Moisturizer. Preservative Free. Organic & 100% Natural Face Moisturizing Cream for Sensitive, Dry & Normal Skin - Anti-Aging and Anti-Wrinkle, for Women and Men. ORIGINAL FORMULA",
-        "price": 29.99,
-        "reasons": [
-          "This facial moisturizer is described as suitable for sensitive, dry and normal skin, matching your sensitive-skin need.",
-          "It is a preservative-free, organic and 100% natural face cream from Botanical Green Care, priced at $29.99."
-        ],
-        "evidence_refs": [
-          "judgment.attribute_evidence.sensitive skin suitability.status",
-          "evidence.title"
-        ],
-        "limitations": [
-          "The listing does not state whether it is fragrance-free, so fragrance-free suitability is unknown.",
-          "Its scent is listed as unscented, but the judgment still marks fragrance-free as unconfirmed."
-        ]
-      },
-      {
-        "rank": 2,
         "product_id": "B014T3QBLK",
         "title": "Living Nature Sensitive Skin Day Moisture Cream",
         "price": null,
         "reasons": [
-          "Living Nature Sensitive Skin Day Moisture Cream is explicitly positioned for sensitive skin.",
-          "It comes as a cream from the brand Living Nature."
+          "This Living Nature day cream is explicitly made for sensitive skin, matching your request."
         ],
         "evidence_refs": [
-          "judgment.attribute_evidence.sensitive skin suitability.status",
-          "evidence.details.Brand"
+          "judgment.attribute_evidence.for sensitive skin.status"
         ],
         "limitations": [
-          "The listing does not confirm whether it is fragrance-free.",
-          "The scent is listed as coconut, which may not suit a fragrance-free preference.",
-          "No price is available in the provided data."
+          "The listing does not state whether it is fragrance-free, so fragrance-free suitability is unconfirmed.",
+          "The listed scent is coconut, which may not suit fragrance-free needs."
         ]
+      },
+      {
+        "rank": 2,
+        "product_id": "B086D9D35V",
+        "title": "Skin Repair Rx Dermatological Moisturizing Lotion, Fragrance Free, Irritated Skin, Sensitive Skin, Soothing lotion with Emu oil, Shea Butter, Vitamins A, E, C & Omega-3, 6, 9 Non-greasy, Super Hydrating Formula, 17 ounces",
+        "price": null,
+        "reasons": [
+          "This Skin Repair Rx lotion is labeled fragrance free and is described for sensitive skin, matching both of your key preferences.",
+          "The formula is a non-greasy, super hydrating lotion with emu oil, shea butter, and vitamins A, E, and C."
+        ],
+        "evidence_refs": [
+          "judgment.attribute_evidence.fragrance-free.status",
+          "title"
+        ],
+        "limitations": []
       },
       {
         "rank": 3,
@@ -288,54 +281,44 @@
         "title": "EltaMD Intense Face and Body Moisturizer for Sensitive & Dry Skin, Moisturizing Facial Post Treatment Lotion, Fragrance-Free, 3.8 oz",
         "price": null,
         "reasons": [
-          "This EltaMD moisturizer is fragrance-free, directly matching your fragrance-free requirement.",
-          "It is described for sensitive and dry skin, matching your sensitive-skin need.",
-          "It is a face and body moisturizer in a 3.8 oz cream format."
+          "This EltaMD moisturizer is fragrance-free and made for sensitive and dry skin, fitting both of your requirements.",
+          "It is a face and body moisturizer suitable for post-treatment skin care."
         ],
         "evidence_refs": [
           "judgment.attribute_evidence.fragrance-free.status",
-          "judgment.attribute_evidence.sensitive skin suitability.status",
-          "evidence.title"
+          "title"
         ],
-        "limitations": [
-          "No price is available in the provided data."
-        ]
+        "limitations": []
       },
       {
         "rank": 4,
-        "product_id": "B01GUIQVZ8",
-        "title": "Ethereal Skin calming moisturizing Creme with natural oatmeal fragrance free",
+        "product_id": "B01G09X1PK",
+        "title": "Great for Gardeners' hands: Unscented Shea Butter Argan Whipped Body Butter, Ultra Moisturizing for SENSITIVE Rough, Dry, Flaky, Hard, and Cracked Skin",
         "price": null,
         "reasons": [
-          "Ethereal Skin calming moisturizing Creme is labeled fragrance free, matching your fragrance-free requirement.",
-          "It is a calming moisturizing cream with natural oatmeal."
+          "This whipped body butter is listed for sensitive, dry skin, matching your sensitive-skin preference."
         ],
         "evidence_refs": [
-          "judgment.attribute_evidence.fragrance-free.status",
-          "evidence.title"
+          "judgment.attribute_evidence.for sensitive skin.status"
         ],
         "limitations": [
-          "The listing does not state whether it is suitable for sensitive skin.",
-          "No price is available in the provided data."
+          "The title says unscented, but fragrance-free is not explicitly confirmed.",
+          "This is a body butter rather than a facial moisturizer."
         ]
       },
       {
         "rank": 5,
-        "product_id": "B01MG4BD5U",
-        "title": "Soften your roughest skin: Unscented Shea Butter Argan Whipped Body Butter, Ultra Moisturizing for SENSITIVE Rough, Dry, Flaky, Hard, and Cracked Skin",
+        "product_id": "B01GUIQVZ8",
+        "title": "Ethereal Skin calming moisturizing Creme with natural oatmeal fragrance free",
         "price": null,
         "reasons": [
-          "This Brighton Beach Arts whipped body butter is described as ultra moisturizing for sensitive, rough and dry skin.",
-          "It is an unscented shea butter and argan oil cream."
+          "This Ethereal Skin calming creme is described as fragrance free in the title."
         ],
         "evidence_refs": [
-          "judgment.attribute_evidence.sensitive skin suitability.status",
-          "evidence.title"
+          "judgment.attribute_evidence.fragrance-free.status"
         ],
         "limitations": [
-          "The judgment marks fragrance-free as unknown despite the unscented title.",
-          "It is a body butter for hands and feet rather than a facial moisturizer.",
-          "No price is available in the provided data."
+          "The listing does not state whether it is suitable for sensitive skin."
         ]
       }
     ],
@@ -350,20 +333,27 @@
       "api_retries": 0,
       "format_retries": 0,
       "fallback_used": false,
-      "latency_ms": 2837.0,
-      "prompt_tokens": 4210,
-      "completion_tokens": 612,
+      "latency_ms": 1919.5,
+      "prompt_tokens": 4136,
+      "completion_tokens": 432,
       "candidate_count": 5,
       "error_kind": null,
       "error": null
     }
   },
   "generator_model": "deepseek-flash",
+  "generator_fallback": false,
+  "memory_backend": "mem0",
+  "degraded": false,
+  "degraded_reason": [],
+  "forced_branch_test": false,
+  "runtime": "langgraph",
+  "max_replans_reached": false,
   "timing_ms": {
-    "memory": 14197.8,
-    "workflow": 35503.6,
-    "generator": 2839.5,
-    "total": 61919.8
+    "memory": 8899.5,
+    "workflow": 46526.4,
+    "generator": 1922.0,
+    "total": 66522.0
   },
-  "trace_path": "/mnt/agr-data/runs/e2e/req_84f93c1bc45e4cfab45e4cc7fdba0543/trace.jsonl"
+  "trace_path": "/mnt/agr-data/runs/e2e/req_e84061a4ed904d3dbc0582f53efa2d57/trace.jsonl"
 }

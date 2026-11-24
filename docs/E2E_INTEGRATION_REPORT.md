@@ -23,7 +23,7 @@ Mem0 Read → DeepSeek Planner → E5/FAISS → Fusion → Hard Constraints
 → LangGraph Controller → STOP / REPLAN → DeepSeek Generator
 ```
 
-- 3 次完整真实运行（同一请求）：**57.9 s / 61.6 s / 61.9 s**；
+- 3 次完整真实运行（同一请求）：**57.9 s / 61.9 s / 66.5 s**；
 - 至少一次自然 **quality_satisfied STOP**：5 个商品，10 条有效 Judgment，117 eligible（最新一次）；
 - 至少一次自然 **REPLAN**：`$1` 预算约束触发第 1 轮 REPLAN，真实 Replanner 生成新 Query，
   第二轮后 `budget_exhausted` STOP，无商品被强行推荐；
@@ -50,7 +50,7 @@ Mem0 Read → DeepSeek Planner → E5/FAISS → Fusion → Hard Constraints
 |---|---|---|---:|---|---:|
 | `run_stop_initial` | `demo_user_002`（新用户） | 0 | 78 | quality_satisfied，5 推荐 | 61.6 s |
 | `run_stop_previous` | `demo_user_002`（feedback 后） | 1 | 117 | quality_satisfied，5 推荐 | 57.9 s |
-| `run_stop_latest` | `demo_user_002`（feedback 后） | 1 | 117 | quality_satisfied，5 推荐 | 61.9 s |
+| `run_stop_latest` | `demo_user_002`（feedback 后） | 1 | 117 | quality_satisfied，5 推荐 | 66.5 s |
 | `run_replan` | `demo_user_003` | 0 | 0 eligible / 149 unknown / 38 fail | REPLAN 后 budget_exhausted，0 推荐 | 25.3 s |
 
 说明：
@@ -68,7 +68,7 @@ Mem0 Read → DeepSeek Planner → E5/FAISS → Fusion → Hard Constraints
 - Judgment：10 个候选、10 条有效记录（`match`/`uncertainty` 已写入 summary）；
 - Controller：`stop / quality_satisfied`，`selected_products` 5 个；
 - Generator：`deepseek-flash`，5 条推荐，商品 ID 全部来自 selected；reasons 为英文；
-- 总耗时 61.9 s，其中 Memory ~14 s、workflow ~?、Generator ~3 s（详细见 summary）。
+- 总耗时 66.5 s，其中 Memory 8.9 s、workflow 46.5 s、Generator 1.9 s（详细见 summary）。
 
 ### 3.2 REPLAN 摘要
 
