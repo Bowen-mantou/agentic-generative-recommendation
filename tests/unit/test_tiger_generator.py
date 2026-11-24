@@ -126,6 +126,7 @@ def test_generator_train_generate_and_evaluate(tmp_path: Path) -> None:
 
 
 def test_tiger_generator_config_file() -> None:
+    pytest.importorskip("torch")
     from recommender.retrieval.tiger.generator import load_generator_config
 
     config = load_generator_config("configs/tiger/generator_pilot.yaml")
