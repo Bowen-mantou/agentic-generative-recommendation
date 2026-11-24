@@ -18,9 +18,12 @@ e5:
 reranker:
   primary_model_id: Qwen/Qwen3-Reranker-0.6B
   baseline_model_id: BAAI/bge-reranker-v2-m3
-  max_length: 2048
-  batch_size: 8
-  device: auto
+  # Verified 2026-11-24 (docs/audit/reranker-smoke.md): Transformers native loading,
+  # CPU, yes=9693/no=2152, fp32. 512-token single-item P50 ~0.40 s; catalog texts < ~700
+  # tokens. Scores saturate: use only for within-query ordering, never as probabilities.
+  max_length: 1024
+  batch_size: 4
+  device: cpu
   instruction: |
     Rank products according to the user's shopping requirements and preferences.
     Prioritize explicit requirements and relevant product attributes.

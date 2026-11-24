@@ -1,0 +1,79 @@
+{
+  "request_id": "req_f445522fc28743e8839c600299459d06",
+  "constraint_summary": {
+    "evaluated_products": 99,
+    "pass_count": 15,
+    "fail_count": 8,
+    "unknown_count": 76,
+    "not_configured_count": 0,
+    "valid_product_count": 15,
+    "constraint_fields": [
+      "price"
+    ]
+  },
+  "model_id": "Qwen/Qwen3-Reranker-0.6B",
+  "batch_size": 4,
+  "latency_ms": 10290.2,
+  "ranked": [
+    {
+      "rank": 1,
+      "product_id": "B013THQAAO",
+      "rerank_score": 0.9962905645370483,
+      "fusion_rank": 4,
+      "product": {
+        "title": "Remedy Phytoplex Botanical Nourishing Skin Cream Moisturizer for Sensitive Skin 2oz (2pk)",
+        "price": 18.0,
+        "main_category": "All Beauty",
+        "brand": "Medline"
+      }
+    },
+    {
+      "rank": 2,
+      "product_id": "B00UCKQ796",
+      "rerank_score": 0.9922624826431274,
+      "fusion_rank": 15,
+      "product": {
+        "title": "Ultra Balm Daily Moisturizer For Dry Itchy Skin, Psoriasis and Eczema Relief That Contains Lanolin, Vitamins A, D & E, Aloe Vera, To Moisturize Face, Body, Dry Hands & Cracked Heels (Lemon)",
+        "price": 19.95,
+        "main_category": "All Beauty",
+        "brand": "Ultra Balm"
+      }
+    },
+    {
+      "rank": 3,
+      "product_id": "B08KH886NY",
+      "rerank_score": 0.9873714447021484,
+      "fusion_rank": 11,
+      "product": {
+        "title": "canBE naturally i can be radiant DAILY MOISTURIZER with Hemp Seed Oil & Aloe Vera, All Natural Face Moisturizer for All Skin Types, Hemp Face Moisturizer Without Parabens, Sulfates, Phthalates(1.7 oz)",
+        "price": 11.5,
+        "main_category": "All Beauty",
+        "brand": "CANBE NATURALLY"
+      }
+    },
+    {
+      "rank": 4,
+      "product_id": "B087QVX3JL",
+      "rerank_score": 0.9258714914321899,
+      "fusion_rank": 9,
+      "product": {
+        "title": "C'est Moi Tinted Moisturizing Lotion SPF 30 | Gentle, Hydrating Formula Provides Broad Spectrum SPF Protection with Sheer, Buildable Coverage, Fragrance-Free, Hypoallergenic | Cocoa, 1.0 Fl Oz",
+        "price": 8.0,
+        "main_category": "All Beauty",
+        "brand": "C'est Moi"
+      }
+    },
+    {
+      "rank": 5,
+      "product_id": "B0009ET4SG",
+      "rerank_score": 0.9225552082061768,
+      "fusion_rank": 2,
+      "product": {
+        "title": "Beauty without Cruelty Maximum Moisture Cream, 2 Ounce",
+        "price": 16.19,
+        "main_category": "All Beauty",
+        "brand": "Beauty Without Cruelty"
+      }
+    }
+  ]
+}

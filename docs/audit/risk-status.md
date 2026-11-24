@@ -41,6 +41,7 @@
 | Interaction History | `/mnt/agr-data/data/processed/interaction_history.db` |
 | Reranker 冒烟 | [reranker-smoke.md](reranker-smoke.md) |
 | Phase 2 候选池 | [phase2-report.md](phase2-report.md)、[evidence/pool_demo_v2.json](evidence/pool_demo_v2.json) |
+| Phase 3 精排 | [phase3-report.md](phase3-report.md)、[evidence/rerank_demo_v2.json](evidence/rerank_demo_v2.json) |
 
 ## 3. 待更新
 

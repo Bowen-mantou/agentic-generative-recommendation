@@ -19,6 +19,7 @@ Qwen3-Reranker-0.6B 精排 → DeepSeek Judgment 逐商品判断 → Adaptive Co
 | 商品目录（Amazon Reviews 2023） | ✅ Phase 1 | 原始 metadata → `ProductRecord` + 双文本模板 + 版本化 manifest |
 | E5 + FAISS 索引与检索 | ✅ Phase 1 | 真实 All_Beauty **112,590** 商品：CPU 编码（768 维）、L2 归一化、`IndexFlatIP`、多 Query 内部 RRF；索引带 manifest/哈希 |
 | Candidate Fusion + 唯一硬约束 Evaluator + 候选池 | ✅ Phase 2 | 跨路 RRF、去重、来源保留、三态约束、eligible/unverified/rejected 分区；真实 E5 候选池演示 99→15 pass / 75 unknown / 9 fail |
+| Qwen3-Reranker-0.6B 精排 | ✅ Phase 3 | Transformers 原生 CPU（yes/no logits）；真实候选池 15 eligible → 精排 10.3 s；分数仅用于同 Query 排序 |
 | TIGER 生成式召回 | ⏳ Phase 4 | 当前只有配置占位；**没有** Mock 冒充正式召回 |
 | Reranker / Planner / Judgment / Controller / Generator / Memory | ⏳ Phase 3–6 | 只有契约与配置，无实现 |
 | 端到端评测 | ⏳ Phase 7 | — |

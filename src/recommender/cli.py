@@ -28,6 +28,7 @@ from recommender.interaction_history import (
 )
 from recommender.observability.context import new_request_context
 from recommender.observability.logging import configure_logging, get_logger
+from recommender.reranking import Qwen3Reranker, RerankService
 from recommender.retrieval.e5.artifacts import build_bundle, load_retriever, verify_bundle
 from recommender.retrieval.e5.encoder import E5Encoder
 from recommender.schemas.common import ConstraintOperator
@@ -105,6 +106,16 @@ def build_parser() -> argparse.ArgumentParser:
     pool.add_argument("--top-k", type=int, default=10)
     pool.add_argument("--per-query-k", type=int, default=None)
     pool.add_argument("--device", default=None)
+
+    rerank = subparsers.add_parser("rerank", help="pool -> eligible -> Qwen3 rerank")
+    rerank.add_argument("--bundle", type=Path, required=True)
+    rerank.add_argument("--catalog", type=Path, required=True)
+    rerank.add_argument("--query", action="append", required=True)
+    rerank.add_argument("--constraint", action="append", default=None)
+    rerank.add_argument("--rerank-query", default=None)
+    rerank.add_argument("--top-k", type=int, default=5)
+    rerank.add_argument("--per-query-k", type=int, default=None)
+    rerank.add_argument("--device", default=None)
 
     search = subparsers.add_parser("search", help="query a built E5 bundle")
     search.add_argument("--bundle", type=Path, required=True)
@@ -394,6 +405,88 @@ def _cmd_pool(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_rerank(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    encoder = _make_encoder(config, device=args.device)
+    e5 = config.retrieval.e5
+    retriever = load_retriever(
+        args.bundle,
+        encoder,
+        top_k_per_query=args.per_query_k or e5.top_k_per_query,
+        rrf_k=e5.rrf_k,
+        max_queries=e5.max_queries,
+    )
+    output = retriever.search(args.query, top_k_per_query=args.per_query_k)
+    outcome = fuse_paths(
+        [output.fused],
+        rrf_k=config.retrieval.fusion.rrf_k,
+        max_candidates=config.retrieval.fusion.max_candidates,
+    )
+    products = {
+        product.product_id: product for product in load_products(args.catalog / "products.jsonl")
+    }
+    constraints = [parse_constraint_text(item) for item in (args.constraint or [])]
+    pool = build_candidate_pool(
+        request_id=new_request_context().request_id,
+        outcome=outcome,
+        constraints=constraints,
+        products=products,
+        rrf_k=config.retrieval.fusion.rrf_k,
+    )
+    if not pool.candidates:
+        print(
+            json.dumps(
+                {
+                    "status": "no_eligible_candidates",
+                    "summary": pool.constraint_summary.model_dump(mode="json"),
+                },
+                indent=2,
+            )
+        )
+        return 1
+    texts = {
+        pair.product_id: pair.rerank_text for pair in load_text_pairs(args.catalog / "texts.jsonl")
+    }
+    scorer = Qwen3Reranker(
+        model_id=config.reranker.primary_model_id,
+        device=args.device or config.reranker.device,
+        max_length=config.reranker.max_length,
+        batch_size=config.reranker.batch_size,
+        instruction=config.reranker.instruction,
+    )
+    service = RerankService(scorer, texts)
+    rerank_query = args.rerank_query or args.query[0]
+    result = service.rerank(rerank_query, pool.candidates, top_k=args.top_k)
+    metadata = {candidate.product_id: candidate.product_metadata for candidate in pool.candidates}
+    print(
+        json.dumps(
+            {
+                "request_id": pool.request_id,
+                "constraint_summary": pool.constraint_summary.model_dump(mode="json"),
+                "model_id": result.model_id,
+                "batch_size": result.batch_size,
+                "latency_ms": round(result.latency_ms, 1),
+                "ranked": [
+                    {
+                        "rank": product.rerank_rank,
+                        "product_id": product.product_id,
+                        "rerank_score": product.rerank_score,
+                        "fusion_rank": product.fusion_rank,
+                        "product": metadata.get(product.product_id, {}),
+                    }
+                    for product in result.ranked
+                ],
+            },
+            indent=2,
+            ensure_ascii=False,
+            default=str,
+        )
+    )
+    return 0
+
+
 def _cmd_search(args: argparse.Namespace) -> int:
     settings = _settings(args)
     config = settings.config
@@ -469,6 +562,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("index", "build"): _cmd_index_build,
         ("index", "info"): _cmd_index_info,
         ("pool", None): _cmd_pool,
+        ("rerank", None): _cmd_rerank,
         ("search", None): _cmd_search,
     }
     handler = commands.get((args.command, getattr(args, f"{args.command}_command", None)))
