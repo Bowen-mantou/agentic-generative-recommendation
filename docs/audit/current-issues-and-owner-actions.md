@@ -1,8 +1,8 @@
 # 当前问题与负责人行动清单
 
 - 日期：2026-11-24（19:40 更新）
-- 仓库：`C:\new\intern\plan\projects\Agentic-Generative-Recommendation`，HEAD `f75fab2`
-- 服务器：`192.0.2.10`，项目 `/home/agr/Agentic-Generative-Recommendation`，HEAD `f75fab2`
+- 仓库：`C:\new\intern\plan\projects\Agentic-Generative-Recommendation`，HEAD `b0ef4f5`
+- 服务器：`192.0.2.10`（占位地址），项目 `/home/agr/Agentic-Generative-Recommendation`
 - 用途：记录**当前仍存在的问题**，区分「需要负责人决策/提供资源」与「工程侧待办」。
   本文只陈述事实、影响和待决选项，不含倾向性建议。
 
@@ -181,7 +181,7 @@ Phase 5 E2E 需要使用真实 API（Planner + Judgment + 后续 Generator）。
 | 本地 pytest | **260 passed, 14 skipped**（2026-11-24 19:36） |
 | 服务器 pytest | **271 passed, 3 skipped**（LangGraph 真实运行；2026-11-24 19:36） |
 | ruff / mypy | 全绿（66 source files；提交时验证） |
-| Git | `7398117` Phase 5 → `4960b13` D6 → `f7bda0a` D3–D8 → `62b9cc4` D1/D11 → `f75fab2` AGENTS |
+| Git | `cee079b` Phase 5 → `c07e22f` D6 → `9082d3b` D3–D8 → `234f080` D1/D11 → `b0ef4f5` AGENTS；发布时已重写历史 |
 | Phase 4 报告 | [TIGER_PILOT_REPORT.md](../phase4/TIGER_PILOT_REPORT.md)、[D1_B1_B2_GATE_REPORT.md](../phase4/D1_B1_B2_GATE_REPORT.md) |
 | Phase 5 | [PLANNER_JUDGMENT_CONTROLLER.md](../phase5/PLANNER_JUDGMENT_CONTROLLER.md)、2 份真实 smoke JSON |
 | Phase 6 | [D9_MEMORY_DEPLOYMENT.md](../phase6/D9_MEMORY_DEPLOYMENT.md)；`scripts/memory/*` |

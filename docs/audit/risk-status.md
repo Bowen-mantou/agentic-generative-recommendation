@@ -22,7 +22,7 @@
 | R11 | Qdrant 用户过滤隔离 | **Mitigated** | D9：u001/u002 payload 过滤检索与 filter 删除精确隔离 | 保持 Phase 6 回归 |
 | R12 | InteractionHistory 与 Mem0 混用 | **In Progress** | SQLite 事件表已实现且与 Mem0 分离；Mem0 未接入；`is_synthetic` 必填 | Phase 6 接入 Mem0 后复核 |
 | R13 | NFS 备份/持久性/并发 | **In Progress** | 产物与数据已迁至 NFS；备份策略未确认（env-recon 未验证） | 负责人确认（Q10）或建副本 |
-| R14 | Git 初始化误伤父仓库 | **Closed** | 独立仓库 `.git` 于项目目录；初始提交 `811c6bf`；凭据未入 Git；父仓库未改动 | 保持 |
+| R14 | Git 初始化误伤父仓库 | **Closed** | 独立仓库 `.git` 于项目目录；初始提交 `fab7e6b`；凭据未入 Git；父仓库未改动 | 保持 |
 | R15 | 合并后 Startup Prompt 仍有冲突 | **Mitigated** | 根目录 V1.2 为唯一权威；旧版归档到 `docs/archive/`；Phase 0–7 与 Q1–Q12 已对齐 | 新增决策时同步 |
 | R16 | 把“不接 MUSA”误解为训练资源已解决 | **Open** | Q11 仅限定第一阶段 CPU；TIGER 训练资源见可行性报告 §3 | 随 Q1 决策处理 |
 | R17 | DeepSeek 模型 ID/JSON/配额变化 | **In Progress** | `/v1/models` 200（`deepseek-flash`、`deepseek-v4-pro`）；结构化输出/超时/重试待 Phase 5 | Phase 5 集成测试 |

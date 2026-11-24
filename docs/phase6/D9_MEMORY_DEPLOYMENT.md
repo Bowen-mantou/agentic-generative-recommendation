@@ -7,7 +7,7 @@
 | 执行时间 | 2026-11-24 15:54 – 16:30（Asia/Shanghai） |
 | 执行人 | memory-deploy（Agent） |
 | 服务器 | `192.0.2.10`（hostname `agr-worker`），用户 `agr`（uid 1003，属 `docker` 组） |
-| 代码基线 | 本地 Git 仓库 `main` @ `26b127e`（本次只新增 `docs/`、`scripts/memory/`，未改 `src/`、`configs/`、`cli.py`） |
+| 代码基线 | 本地 Git 仓库 `main` @ `4324ea9`（本次只新增 `docs/`、`scripts/memory/`，未改 `src/`、`configs/`、`cli.py`） |
 | 结论 | **Qdrant 独立容器已部署并通过写入/检索/删除/重启恢复/NFS 备份恢复全部测试；`intfloat/multilingual-e5-base` 本地推理验证通过（768 维、中文单条查询 ~16 ms@64 线程 / ~33 ms@4 线程）；mem0ai 2.2.1 + qdrant-client 1.20.0 接口调研完成。** 决策状态：D9 推荐方案在本报告中有实测证据，最终确认仍需项目负责人批准。 |
 
 > 本报告只记录**真实执行**过的命令与输出。凡是根据源码/签名推断、但没有在真实链路跑通的内容，均显式标为「未验证」。

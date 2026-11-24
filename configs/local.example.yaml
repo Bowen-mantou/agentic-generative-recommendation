@@ -2,11 +2,10 @@
 # Values here override configs/base.yaml, models.yaml, retrieval.yaml, controller.yaml
 # and memory.yaml, in that order, before environment overrides are applied.
 #
-# S4000 layout:
-#   * raw downloads go to the 12 TB NFS mount (home only has ~3.7 GB free)
+# Example server layout:
+#   * raw data and model caches live outside the repository (mounted volume / NFS)
 #   * model cache is redirected by scripts/env_s4000.sh (HF_HOME)
-#   * E5 runs on CPU in Phase 1; MUSA was measured to work but is not wired into the
-#     encoder yet (docs/audit/s4000-environment.md)
+#   * E5 runs on CPU in this baseline; GPU acceleration is not wired into the encoder
 paths:
   raw_dir: /mnt/agr-data/data/raw
   interim_dir: /mnt/agr-data/data/interim

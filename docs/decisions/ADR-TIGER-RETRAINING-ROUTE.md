@@ -1,7 +1,7 @@
 # ADR-TIGER-RETRAINING-ROUTE：B→A（重解释）+ A3 Pilot
 
 - 状态：已确认（2026-11-24，项目负责人）
-- 依据：`docs/decisions/Phase4_TIGER实施方案与Phase5-7集成计划_V1.0.md` §1.1
+- 依据：`docs/decisions/Phase4_TIGER_IMPLEMENTATION_AND_PHASE5-7_PLAN_V1.0.md` §1.1
 - 关联：Q1 / Q11 / Q12
 
 ## 决策

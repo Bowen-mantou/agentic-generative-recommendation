@@ -58,14 +58,12 @@ class WorkflowGraphState(TypedDict):
 def _runtime() -> dict[str, Any] | None:
     """Import the LangGraph runtime once; ``None`` when the extra is not installed."""
     try:
-        from langgraph.graph import END, START, StateGraph  # type: ignore[import-not-found]
+        from langgraph.graph import END, START, StateGraph
     except ImportError:
         return None
     runtime: dict[str, Any] = {"StateGraph": StateGraph, "START": START, "END": END}
     try:
-        from langgraph.graph.state import (  # type: ignore[import-not-found]
-            CompiledStateGraph,
-        )
+        from langgraph.graph.state import CompiledStateGraph
 
         runtime["CompiledStateGraph"] = CompiledStateGraph
     except ImportError:  # pragma: no cover - very old langgraph layouts

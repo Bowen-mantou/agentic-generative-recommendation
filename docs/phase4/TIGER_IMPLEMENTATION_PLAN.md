@@ -6,7 +6,7 @@
 - **状态**：审计完成；底座选择与全目录 SID 方案待 Lead / 项目负责人确认
 - **关联决策**：Q1（B→A 重解释 + A3 Pilot）、Q10（存储）、Q11（CPU 基线）、Q12（验收边界）；
   `docs/decisions/ADR-TIGER-RETRAINING-ROUTE.md`
-- **上游要求**：`docs/decisions/Phase4_TIGER%E5%AE%9E%E6%96%BD%E6%96%B9%E6%A1%88%E4%B8%8EPhase5-7%E9%9B%86%E6%88%90%E8%AE%A1%E5%88%92_V1.0 (1).md`
+- **上游要求**：`docs/decisions/Phase4_TIGER_IMPLEMENTATION_AND_PHASE5-7_PLAN_V1.0.md`
   §2.2（外部代码复用范围）、§2.5 Step 1（数据与代码审计）、§8（文件/接口/轨迹）
 - **证据快照**：2026-11-24 11:22–11:45 CST。文中的 stars、最后提交、release、PyPI 元数据均为当日抓取；
   服务器实测命令与输出见附录 A。
@@ -628,7 +628,7 @@ src/recommender/retrieval/tiger/
 
 - 决策与风险台账：`docs/decisions/FINAL_DECISIONS_AND_RISK_REGISTER.md`（Q1/Q10/Q11/Q12）
 - ADR：`docs/decisions/ADR-TIGER-RETRAINING-ROUTE.md`
-- Phase4 方案：`docs/decisions/Phase4_TIGER%E5%AE%9E%E6%96%BD%E6%96%B9%E6%A1%88%E4%B8%8EPhase5-7%E9%9B%86%E6%88%90%E8%AE%A1%E5%88%92_V1.0 (1).md`
+- Phase4 方案：`docs/decisions/Phase4_TIGER_IMPLEMENTATION_AND_PHASE5-7_PLAN_V1.0.md`
   §2.2/§2.5/§8（文件名含 URL 编码，按实际文件读取）
 - 数据/产物（NFS，只读）：
   - E5：`/mnt/agr-data/artifacts/faiss/e5-base-v2_all_beauty_v2/{embeddings.npy,product_ids.jsonl,manifest.json}`
