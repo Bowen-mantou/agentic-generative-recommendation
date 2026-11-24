@@ -35,7 +35,10 @@ def test_qwen3_reranker_scores_and_orders() -> None:
     )
     query = "moisturizing face cream for dry sensitive skin"
     documents = [
-        "Daily Face Moisturizer Serum - Hydrating Vitamin Lotion with Aloe Vera and Shea Butter for Sensitive Dry Skin",
+        (
+            "Daily Face Moisturizer Serum - Hydrating Vitamin Lotion with Aloe Vera "
+            "and Shea Butter for Sensitive Dry Skin"
+        ),
         "Maybelline Lash Sensational Mascara, Very Black",
         "Dyson V8 cordless vacuum cleaner",
         "Sony WH-1000XM5 wireless headphones",

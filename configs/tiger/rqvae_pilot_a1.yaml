@@ -1,0 +1,21 @@
+# Phase 4 A1 pilot config (plan §2.4): 3 levels x 256, 768-d E5 input.
+# Training uses the project's own All_Beauty catalog vectors (decision Q1: B->A).
+name: rqvae_pilot_a1
+input_dim: 768
+hidden_dim: 512
+latent_dim: 32
+num_levels: 3
+codebook_size: 256
+commitment_weight: 0.25
+codebook_weight: 1.0
+epochs: 100
+batch_size: 1024
+learning_rate: 0.001
+weight_decay: 0.0
+val_ratio: 0.1
+seed: 42
+device: cpu
+log_every_epochs: 10
+warmup_epochs: 5
+kmeans_init: true
+kmeans_sample_size: 20000

@@ -25,7 +25,7 @@ AI 编程助手不得自行更改。技术验证失败时必须提交证据、�
 
 | ID | 决策主题 | 已确认结论 |
 |---|---|---|
-| Q1 | TIGER 路线 | 外部实现/权重优先（先核查兼容性）；自建 RQ-VAE + 自回归为备用，且需先提交训练资源评估，不得用 Mock/规则映射冒充 |
+| Q1 | TIGER 路线 | **B→A（重解释）+ A3 Pilot（2026-11-24 确认）**：复用外部代码/结构/流程，用本项目 E5 向量与真实序列重训 RQ-VAE + 自回归；先 A1 Pilot（3×256，≥3）达到验收后再全量；禁止 Mock/随机 ID/规则映射 |
 | Q2 | Reranker 加载与设备 | `Qwen3-Reranker-0.6B` 使用 Transformers 原生模型/tokenizer（不把 SentenceTransformers `CrossEncoder` 作为默认实现）；CPU 为第一阶段基线；`bge-reranker-v2-m3` 仅作对照 |
 | Q3 | 硬约束 Schema | 整体三态 + `ConstraintCheck[]` 明细；无约束时 `constraint_checks=[]` 且整体状态为空/可空，不得伪装为已验证通过；不增加 `not_required` 第四态 |
 | Q4 | E5 | 保留 `intfloat/e5-base-v2`（768 维、`query:` / `passage:` 前缀）；不因未验证的精度预期重建索引 |

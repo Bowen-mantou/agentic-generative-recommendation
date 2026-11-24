@@ -1,0 +1,21 @@
+# Phase 4 A2 control config (only run if A1 exposes a concrete encoding problem):
+# 4 levels x 1024. Sequence threshold for the generator is configured separately.
+name: rqvae_pilot_a2
+input_dim: 768
+hidden_dim: 512
+latent_dim: 32
+num_levels: 4
+codebook_size: 1024
+commitment_weight: 0.25
+codebook_weight: 1.0
+epochs: 100
+batch_size: 1024
+learning_rate: 0.001
+weight_decay: 0.0
+val_ratio: 0.1
+seed: 42
+device: cpu
+log_every_epochs: 10
+warmup_epochs: 5
+kmeans_init: true
+kmeans_sample_size: 20000

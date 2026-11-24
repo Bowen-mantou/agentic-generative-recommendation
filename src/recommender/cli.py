@@ -93,6 +93,47 @@ def build_parser() -> argparse.ArgumentParser:
     index_info = index_sub.add_parser("info", help="verify a bundle and print its manifest")
     index_info.add_argument("--bundle", type=Path, required=True)
 
+    tiger = subparsers.add_parser("tiger", help="TIGER RQ-VAE / Semantic IDs (Phase 4)")
+    tiger_sub = tiger.add_subparsers(dest="tiger_command", required=True)
+    tiger_rqvae = tiger_sub.add_parser("rqvae", help="train RQ-VAE and build Semantic IDs")
+    tiger_rqvae.add_argument("--bundle", type=Path, required=True)
+    tiger_rqvae.add_argument("--config", type=Path, required=True)
+    tiger_rqvae.add_argument("--out", type=Path, default=None)
+    tiger_rqvae.add_argument("--epochs", type=int, default=None)
+    tiger_rqvae.add_argument("--device", default=None)
+    tiger_semantic = tiger_sub.add_parser("semantic-ids", help="rebuild IDs from a checkpoint")
+    tiger_semantic.add_argument("--bundle", type=Path, required=True)
+    tiger_semantic.add_argument("--checkpoint-dir", type=Path, required=True)
+    tiger_semantic.add_argument("--out", type=Path, default=None)
+    tiger_sequences = tiger_sub.add_parser("sequences", help="build time-split TIGER samples")
+    tiger_sequences.add_argument("--db", type=Path, default=None)
+    tiger_sequences.add_argument("--semantic-ids", type=Path, required=True)
+    tiger_sequences.add_argument("--out", type=Path, default=None)
+    tiger_sequences.add_argument("--name", default="a1")
+    tiger_sequences.add_argument("--min-events", type=int, default=3)
+    tiger_sequences.add_argument("--min-history", type=int, default=2)
+    tiger_sequences.add_argument("--max-history-items", type=int, default=10)
+    tiger_generator = tiger_sub.add_parser("generator", help="train the AR generator")
+    tiger_generator.add_argument("--samples-dir", type=Path, required=True)
+    tiger_generator.add_argument("--semantic-ids", type=Path, required=True)
+    tiger_generator.add_argument("--config", type=Path, required=True)
+    tiger_generator.add_argument("--out", type=Path, default=None)
+    tiger_generator.add_argument("--epochs", type=int, default=None)
+    tiger_evaluate = tiger_sub.add_parser("evaluate", help="next-item metrics on time split")
+    tiger_evaluate.add_argument("--generator-dir", type=Path, required=True)
+    tiger_evaluate.add_argument("--samples-dir", type=Path, required=True)
+    tiger_evaluate.add_argument("--semantic-ids", type=Path, required=True)
+    tiger_evaluate.add_argument("--db", type=Path, default=None)
+    tiger_evaluate.add_argument("--split", default="test")
+    tiger_evaluate.add_argument("--out", type=Path, default=None)
+    tiger_evaluate.add_argument("--beam-size", type=int, default=None)
+    tiger_evaluate.add_argument(
+        "--checkpoint", default="final", choices=["final", "best"], help="which checkpoint"
+    )
+
+    tiger_info = tiger_sub.add_parser("info", help="print RQ-VAE / Semantic ID manifests")
+    tiger_info.add_argument("--dir", type=Path, required=True)
+
     pool = subparsers.add_parser("pool", help="retrieve -> fuse -> constraints -> pool")
     pool.add_argument("--bundle", type=Path, required=True)
     pool.add_argument("--catalog", type=Path, required=True)
@@ -349,6 +390,219 @@ def parse_constraint_text(text: str) -> HardConstraint:
     )
 
 
+def _tiger_git_commit(project_root: Path) -> str | None:
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        return result.stdout.strip() or None
+    except OSError:
+        return None
+
+
+def _cmd_tiger_rqvae(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    from recommender.retrieval.tiger.config import load_tiger_config
+    from recommender.retrieval.tiger.rqvae import (
+        encode_vectors,
+        load_bundle_vectors,
+        train_rqvae,
+        write_rqvae_manifest,
+    )
+    from recommender.retrieval.tiger.semantic_ids import SemanticIdTable
+
+    tiger_config = load_tiger_config(args.config)
+    if args.epochs is not None:
+        tiger_config = tiger_config.model_copy(update={"epochs": args.epochs})
+    if args.device is not None:
+        tiger_config = tiger_config.model_copy(update={"device": args.device})
+    out_dir = args.out or (config.path("semantic_ids_dir") / tiger_config.name)
+    vectors, product_ids = load_bundle_vectors(args.bundle)
+    model, metrics = train_rqvae(vectors, tiger_config, out_dir)
+    manifest = write_rqvae_manifest(
+        out_dir,
+        config=tiger_config,
+        bundle_dir=args.bundle,
+        vectors_path=args.bundle / "embeddings.npy",
+        product_ids_path=args.bundle / "product_ids.jsonl",
+        metrics=metrics,
+        git_commit=_tiger_git_commit(config.project_root),
+    )
+    codes = encode_vectors(model, vectors)
+    table = SemanticIdTable.build(product_ids, codes)
+    table_manifest = table.save(out_dir)
+    print(
+        json.dumps(
+            {
+                "out_dir": str(out_dir),
+                "metrics": metrics.as_dict(),
+                "manifest": manifest,
+                "semantic_id_manifest": table_manifest,
+            },
+            indent=2,
+            ensure_ascii=False,
+            default=str,
+        )
+    )
+    return 0
+
+
+def _cmd_tiger_semantic_ids(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    from recommender.retrieval.tiger.rqvae import (
+        encode_vectors,
+        load_bundle_vectors,
+        load_rqvae,
+    )
+    from recommender.retrieval.tiger.semantic_ids import SemanticIdTable
+
+    model, tiger_config = load_rqvae(args.checkpoint_dir / "checkpoint.pt")
+    vectors, product_ids = load_bundle_vectors(args.bundle)
+    if vectors.shape[1] != tiger_config.input_dim:
+        raise SystemExit(
+            f"bundle dim {vectors.shape[1]} != checkpoint dim {tiger_config.input_dim}"
+        )
+    codes = encode_vectors(model, vectors)
+    table = SemanticIdTable.build(product_ids, codes)
+    out_dir = args.out or args.checkpoint_dir
+    manifest = table.save(out_dir)
+    print(json.dumps({"out_dir": str(out_dir), "manifest": manifest}, indent=2, ensure_ascii=False))
+    return 0
+
+
+def _tiger_db_path(config: AppConfig, override: Path | None) -> Path:
+    return override or config.resolve(config.memory.sqlite.path)
+
+
+def _cmd_tiger_sequences(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    from recommender.interaction_history import InteractionStore
+    from recommender.retrieval.tiger.semantic_ids import SemanticIdTable
+    from recommender.retrieval.tiger.sequences import build_sequences, save_samples
+
+    db_path = _tiger_db_path(config, args.db)
+    out_dir = args.out or (config.path("semantic_ids_dir") / f"samples_{args.name}")
+    table = SemanticIdTable.load(args.semantic_ids)
+    with InteractionStore(db_path) as store:
+        samples, stats = build_sequences(
+            store,
+            table,
+            min_events=args.min_events,
+            min_history=args.min_history,
+            max_history_items=args.max_history_items,
+        )
+    manifest = save_samples(
+        samples,
+        out_dir,
+        stats,
+        extra_manifest={"semantic_ids_dir": str(args.semantic_ids), "db_path": str(db_path)},
+    )
+    print(
+        json.dumps(
+            {"out_dir": str(out_dir), "stats": stats.as_dict(), "manifest": manifest},
+            indent=2,
+            ensure_ascii=False,
+            default=str,
+        )
+    )
+    return 0
+
+
+def _cmd_tiger_generator(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    from recommender.retrieval.tiger.generator import (
+        load_generator_config,
+        train_generator,
+        write_generator_manifest,
+    )
+    from recommender.retrieval.tiger.sequences import load_samples
+
+    generator_config = load_generator_config(args.config)
+    if args.epochs is not None:
+        generator_config = generator_config.model_copy(update={"epochs": args.epochs})
+    out_dir = args.out or (config.path("semantic_ids_dir") / generator_config.name)
+    train_rows = load_samples(args.samples_dir, "train")
+    val_rows = load_samples(args.samples_dir, "validation")
+    _model, metrics = train_generator(train_rows, val_rows, generator_config, out_dir)
+    manifest = write_generator_manifest(
+        out_dir,
+        config=generator_config,
+        samples_dir=args.samples_dir,
+        semantic_ids_dir=args.semantic_ids,
+        metrics=metrics,
+        git_commit=_tiger_git_commit(config.project_root),
+    )
+    print(
+        json.dumps(
+            {"out_dir": str(out_dir), "metrics": metrics.as_dict(), "manifest": manifest},
+            indent=2,
+            ensure_ascii=False,
+            default=str,
+        )
+    )
+    return 0
+
+
+def _cmd_tiger_evaluate(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    from recommender.interaction_history import InteractionStore
+    from recommender.retrieval.tiger.generator import (
+        evaluate_samples,
+        load_generator,
+        popularity_from_store,
+    )
+    from recommender.retrieval.tiger.semantic_ids import SemanticIdTable
+    from recommender.retrieval.tiger.sequences import load_samples
+    from recommender.utils.io import write_json
+
+    out_dir = args.out or (args.generator_dir / "evaluation")
+    checkpoint_name = "generator_best.pt" if args.checkpoint == "best" else "generator.pt"
+    model, generator_config = load_generator(args.generator_dir / checkpoint_name)
+    if args.beam_size is not None:
+        generator_config = generator_config.model_copy(update={"beam_size": args.beam_size})
+    table = SemanticIdTable.load(args.semantic_ids)
+    rows = load_samples(args.samples_dir, args.split)
+    db_path = _tiger_db_path(config, args.db)
+    with InteractionStore(db_path) as store:
+        popularity = popularity_from_store(store)
+    report = evaluate_samples(model, generator_config, rows, table, popularity)
+    report["split"] = args.split
+    report["checkpoint"] = args.checkpoint
+    write_json(out_dir / "evaluation.json", report)
+    print(json.dumps(report, indent=2, ensure_ascii=False, default=str))
+    return 0
+
+
+def _cmd_tiger_info(args: argparse.Namespace) -> int:
+    from recommender.utils.io import read_json
+
+    directory = args.dir
+    payload: dict[str, object] = {"dir": str(directory)}
+    for name in ("manifest.json", "metrics.json", "semantic_id_manifest.json"):
+        path = directory / name
+        if path.is_file():
+            payload[name] = read_json(path)
+    print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
+    return 0
+
+
 def _cmd_pool(args: argparse.Namespace) -> int:
     settings = _settings(args)
     config = settings.config
@@ -561,6 +815,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("history", "stats"): _cmd_history_stats,
         ("index", "build"): _cmd_index_build,
         ("index", "info"): _cmd_index_info,
+        ("tiger", "rqvae"): _cmd_tiger_rqvae,
+        ("tiger", "semantic-ids"): _cmd_tiger_semantic_ids,
+        ("tiger", "sequences"): _cmd_tiger_sequences,
+        ("tiger", "generator"): _cmd_tiger_generator,
+        ("tiger", "evaluate"): _cmd_tiger_evaluate,
+        ("tiger", "info"): _cmd_tiger_info,
         ("pool", None): _cmd_pool,
         ("rerank", None): _cmd_rerank,
         ("search", None): _cmd_search,

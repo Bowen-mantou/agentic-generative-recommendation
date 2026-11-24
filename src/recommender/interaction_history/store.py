@@ -183,6 +183,15 @@ class InteractionStore:
             len(events) for _, events in self.iter_user_sequences(min_events=1, cutoff_ts=cutoff_ts)
         ]
 
+    def product_interaction_counts(self) -> dict[str, int]:
+        """Interaction count per product (used to break Semantic ID collisions)."""
+        return {
+            str(row[0]): int(row[1])
+            for row in self._connection.execute(
+                "SELECT product_id, COUNT(*) FROM interaction_events GROUP BY product_id"
+            )
+        }
+
     def stats(self, *, cutoff_ts: int | None = None) -> dict[str, Any]:
         total = self.count(cutoff_ts=cutoff_ts)
         users = self._connection.execute(

@@ -9,8 +9,8 @@
 
 | 风险 | 主题 | 状态 | 证据 / 更新 | 下一步 |
 |---|---|---|---|---|
-| R1 | 外部 TIGER 与 All_Beauty 不兼容 | **In Progress**（结论：无权重，代码需改造） | [tiger-compatibility-report.md](tiger-compatibility-report.md)：6 个候选实现、无 TIGER 端到端权重、无 All_Beauty 权重 | 负责人确认 Q1 解释（见 [tiger-feasibility-assessment.md](tiger-feasibility-assessment.md)） |
-| R2 | 自建 TIGER 训练成本超预算 | **In Progress** | [tiger-feasibility-assessment.md](tiger-feasibility-assessment.md)：8,201 条 ≥3 序列；3×256 Semantic ID 冲突 44.3%；CPU 训练为人时/时长估算 | 负责人选择 A1/A2/A3/A4 后再评估 |
+| R1 | 外部 TIGER 与 All_Beauty 不兼容 | **Mitigated**（Q1 B→A 已确认，按 A1 Pilot 执行） | 无外部权重；Cornac v3.2.0 审计通过（[TIGER_IMPLEMENTATION_PLAN.md](../phase4/TIGER_IMPLEMENTATION_PLAN.md)）；自研 RQ-VAE 已训练 | 无外部权重依赖；保留 Cornac 作校验 |
+| R2 | 自建 TIGER 训练成本超预算 | **In Progress → 质量风险** | A1 Pilot 实测：RQ-VAE 77 s、生成器 111 s（CPU）；但生成器 Recall@10 0.15% < 热度基线 0.34%，远低于 E5 画像 1.6%（[TIGER_PILOT_REPORT.md](../phase4/TIGER_PILOT_REPORT.md)） | 等待负责人选择 A2 / 数据范围 / 偏差方案 |
 | R3 | Reviews 下载 / 用户序列构建 | **Mitigated** | reviews 326,611,506 B（SHA-256 `36ca7c48…`）；694,252 事件 / 631,986 用户 / 112,565 商品；0 跳过；SQLite 已建并校验 | 保持时间切分与合成隔离 |
 | R4 | Qwen3-Reranker 原生打分实现错误 | **Closed**（有边界） | [reranker-smoke.md](reranker-smoke.md)：`Qwen3ForCausalLM` 跑通；yes=9693 / no=2152 单 token；官方模板三方一致；10 对手写文本 100% 区分；复现模型卡样例（7.597 vs 7.625）。分数饱和，**不可当概率/阈值** | 仅用于同 query 相对排序；阈值待标注数据 |
 | R5 | CPU Reranker 延迟/内存不满足 | **Mitigated**（实测数字已给出） | 512 token：单条 P50 0.41 s、batch4 摊薄 0.29 s；2048 token：单条 3.65 s、batch4 2.03 s；20 候选（512 token，batch4）≈ 6 s/query；fp32 权重 2.38 GB，batch1 峰值 3.9–5.2 GB | 批量/截断/候选数需按延迟预算设定；MUSA 未用（Q11） |
@@ -42,6 +42,7 @@
 | Reranker 冒烟 | [reranker-smoke.md](reranker-smoke.md) |
 | Phase 2 候选池 | [phase2-report.md](phase2-report.md)、[evidence/pool_demo_v2.json](evidence/pool_demo_v2.json) |
 | Phase 3 精排 | [phase3-report.md](phase3-report.md)、[evidence/rerank_demo_v2.json](evidence/rerank_demo_v2.json) |
+| Phase 4 Pilot | [TIGER_PILOT_REPORT.md](../phase4/TIGER_PILOT_REPORT.md)、[TIGER_IMPLEMENTATION_PLAN.md](../phase4/TIGER_IMPLEMENTATION_PLAN.md) |
 
 ## 3. 待更新
 
