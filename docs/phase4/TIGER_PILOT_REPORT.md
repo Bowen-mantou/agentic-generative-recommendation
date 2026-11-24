@@ -4,6 +4,7 @@
 - 依据：[Phase4 实施计划](../decisions/Phase4_TIGER实施方案与Phase5-7集成计划_V1.0%20(1).md) §2.4–2.6、ADR-TIGER-RETRAINING-ROUTE
 - 状态：**Pilot 已执行；RQ-VAE 编码通过，生成式召回质量未达门槛；未启动全量训练**
 - 产物：`/mnt/agr-data/artifacts/semantic_ids/{rqvae_pilot_a1,generator_pilot_a1,samples_a1}`
+- 后续受控实验（B1/B2）与 D11 最终判定：[D1_B1_B2_GATE_REPORT.md](D1_B1_B2_GATE_REPORT.md)
 
 ## 1. 结论摘要
 

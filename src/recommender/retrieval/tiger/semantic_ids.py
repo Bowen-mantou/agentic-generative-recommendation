@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +36,12 @@ class SemanticIdTable:
     product_ids: list[str]
     codes: np.ndarray
     id_to_products: dict[str, list[str]]
+    _row_of: dict[str, int] = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        # O(1) product_id -> row lookup; list.index() is O(N) and made sequence
+        # construction over ~100k events unacceptably slow.
+        self._row_of = {product_id: index for index, product_id in enumerate(self.product_ids)}
 
     @classmethod
     def build(cls, product_ids: list[str], codes: np.ndarray) -> SemanticIdTable:
@@ -62,9 +68,8 @@ class SemanticIdTable:
         return len(self.id_to_products)
 
     def semantic_id_of(self, product_id: str) -> tuple[int, ...] | None:
-        try:
-            row = self.product_ids.index(product_id)
-        except ValueError:
+        row = self._row_of.get(product_id)
+        if row is None:
             return None
         return tuple(int(token) for token in self.codes[row])
 

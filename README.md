@@ -20,9 +20,9 @@ Qwen3-Reranker-0.6B 精排 → DeepSeek Judgment 逐商品判断 → Adaptive Co
 | E5 + FAISS 索引与检索 | ✅ Phase 1 | 真实 All_Beauty **112,590** 商品：CPU 编码（768 维）、L2 归一化、`IndexFlatIP`、多 Query 内部 RRF；索引带 manifest/哈希 |
 | Candidate Fusion + 唯一硬约束 Evaluator + 候选池 | ✅ Phase 2 | 跨路 RRF、去重、来源保留、三态约束、eligible/unverified/rejected 分区；真实 E5 候选池演示 99→15 pass / 75 unknown / 9 fail |
 | Qwen3-Reranker-0.6B 精排 | ✅ Phase 3 | Transformers 原生 CPU（yes/no logits）；真实候选池 15 eligible → 精排 10.3 s；分数仅用于同 Query 排序 |
-| TIGER 生成式召回 | ⚠️ Phase 4 Pilot | RQ-VAE A1 编码通过（100,702 唯一 ID）；生成器 Recall@10 0.15% < 热度基线 0.34%，未达门槛；未全量训练，待决策（[报告](docs/phase4/TIGER_PILOT_REPORT.md)） | 当前只有配置占位；**没有** Mock 冒充正式召回 |
+| TIGER 生成式召回 | ⛔ No-Go（D11） | A1/B1/B2 均未通过 D11（TIGER Recall@10 0.15%/0.25%/0.07% vs popularity 0.34–0.82%、E5-profile 2.9–4.4%）；未全量训练，Phase 4 未完成（[报告](docs/phase4/D1_B1_B2_GATE_REPORT.md)） | 当前只有配置占位；**没有** Mock 冒充正式召回 |
 | Reranker / Planner / Judgment / Controller / Generator / Memory | ⏳ Phase 3–6 | 只有契约与配置，无实现 |
-| 端到端评测 | ⏳ Phase 7 | — |
+| 端到端评测 | 🟡 Phase 7 准备 | D10 三类评测协议与模板完成；人工 Query 尚未标注 |
 
 可复现证据、命令与指标见 [docs/audit/phase1-report.md](docs/audit/phase1-report.md)；
 审计与实施计划见 [docs/audit/repository-audit-and-plan.md](docs/audit/repository-audit-and-plan.md)。

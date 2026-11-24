@@ -429,6 +429,43 @@ Agentic 推荐闭环可运行。 4. Phase 7：用可复现数据验证各模块�
 
 ---
 
+## 7.1 D1–D11 补充决策（2026-11-24 确认）
+
+项目负责人转交的 [Phase4-7_D1-D11 技术建议与决策建议稿](Phase4-7_D1-D11_DECISION_DRAFT_V1.0.md)
+已作为本轮执行依据（原文标注“等待确认”，本轮按已确认处理；如有异议可逐项回退）。
+要点：
+
+| ID | 决策 |
+|---|---|
+| D1 | B：先 B1（3×256 + 序列 ≥2），再 B2（4×1024 + 序列 ≥3），受控实验 |
+| D2 | 单次实验 ≤2 h；最多 1 组并行；全阶段 1 次配置修正重试；自动调参禁止 |
+| D3 | A：安装 LangGraph 并让正式工作流经 LangGraph 运行，保留 Python 业务逻辑 |
+| D4 | C：新增 `api_failed`，记录 `failed_component`（planner/judgment/generator） |
+| D5 | B：严格 Hash（NFKC + casefold + 空白归一）检测，移除无效相似度配置 |
+| D6 | B：Judgment 按 `product_id` 从 Catalog 按需补 description/details |
+| D7 | C：Planner 降级可配置，默认结构化失败，显式降级需标记 degraded/plan_source |
+| D8 | C：新增 `min_judgments`（初始 3），质量 STOP 需满足有效 Judgment 数量 |
+| D9 | 独立 Qdrant 容器 + `intfloat/multilingual-e5-base`（记忆）+ 本地活动盘、NFS 备份 |
+| D10 | C+A：人工 Query 集为主、Persona 合成 Query 为辅，三类协议分开报告 |
+| D11 | A + 双路增益：TIGER 需超热度基线，且 Hybrid 对 E5-only 有可验证增益 |
+
+
+**D1–D11 执行状态（2026-11-24）**
+
+| ID | 状态 |
+|---|---|
+| D1 | A1/B1/B2 受控实验完成；**三项均未通过 D11 → No-Go**；未全量训练，Phase 4 未完成（[报告](../phase4/D1_B1_B2_GATE_REPORT.md)） |
+| D2 | 遵守：单实验 <2 h、无并行训练、无自动调参；1 次配置修正 + 1 次实现 bug 修正已记录 |
+| D3 | 完成：langgraph 1.2.24；正式入口走 CompiledStateGraph；9 个集成测试（服务器） |
+| D4 | 完成：`api_failed` + `failed_component` + 重试成功不 STOP |
+| D5 | 完成：NFKC+casefold+空白归一后 SHA-256 严格判重；移除无效相似度配置 |
+| D6 | 完成：`JudgmentEvidenceBuilder`（Catalog 按需补 description/details，token 预算） |
+| D7 | 完成：planner fallback 默认关闭；显式开启生成 degraded balanced 计划 |
+| D8 | 完成：`min_judgments=3`；2 条不达标、3 条达标测试通过 |
+| D9 | Qdrant 容器运行 + `multilingual-e5-base` 验证（中文 P50 16.2 ms）；`Memory.add` 端到端待 Phase 6 |
+| D10 | 协议与模板完成（`docs/phase7/EVALUATION_PROTOCOL_D10.md`）；人工标注**尚未进行** |
+| D11 | 执行完毕：条件一/二均不通过；偏差说明见 [Phase 4 报告](../phase4/D1_B1_B2_GATE_REPORT.md) |
+
 ## 8. 风险状态（执行记录）
 
 按 §6 第 5 条维护；详细证据与逐条更新见
