@@ -153,6 +153,27 @@ def build_parser() -> argparse.ArgumentParser:
     eval_pilot.add_argument("--workers", type=int, default=1)
     eval_pilot.add_argument("--dataset-version", default=None)
 
+    recommend = subparsers.add_parser(
+        "recommend", help="real end-to-end recommendation (Memory -> Planner -> ... -> Generator)"
+    )
+    recommend.add_argument("--query", required=True)
+    recommend.add_argument("--user-id", required=True)
+    recommend.add_argument("--catalog", type=Path, default=None)
+    recommend.add_argument("--bundle", type=Path, default=None)
+    recommend.add_argument("--trace-dir", type=Path, default=None)
+    recommend.add_argument("--top-k", type=int, default=5)
+    recommend.add_argument("--judgment-top-n", type=int, default=10)
+    recommend.add_argument("--rerank-top-n", type=int, default=50)
+    recommend.add_argument("--device", default=None)
+    recommend.add_argument("--memory", action=argparse.BooleanOptionalAction, default=True)
+
+    feedback = subparsers.add_parser("feedback", help="write explicit user feedback to Memory")
+    feedback.add_argument("--user-id", required=True)
+    feedback.add_argument("--product-id", required=True)
+    feedback.add_argument("--feedback", choices=["positive", "negative"], required=True)
+    feedback.add_argument("--note", default="")
+    feedback.add_argument("--simulated", action="store_true", help="mark synthetic feedback")
+
     pool = subparsers.add_parser("pool", help="retrieve -> fuse -> constraints -> pool")
     pool.add_argument("--bundle", type=Path, required=True)
     pool.add_argument("--catalog", type=Path, required=True)
@@ -674,6 +695,83 @@ def _cmd_eval_pilot(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_recommend(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    from recommender.e2e import E2EOptions, run_e2e
+
+    catalog = args.catalog or (config.path("catalog_dir") / "all_beauty_v2")
+    bundle = args.bundle or (config.path("faiss_dir") / "e5-base-v2_all_beauty_v2")
+    trace_dir = args.trace_dir or (config.path("runs_dir") / "e2e")
+    options = E2EOptions(
+        catalog_dir=catalog,
+        bundle_dir=bundle,
+        trace_dir=trace_dir,
+        top_k=args.top_k,
+        judgment_top_n=args.judgment_top_n,
+        rerank_top_n=args.rerank_top_n,
+        memory_enabled=args.memory,
+        device=args.device,
+    )
+    result = run_e2e(
+        query=args.query,
+        user_id=args.user_id,
+        options=options,
+        settings=settings,
+    )
+    print(json.dumps(result.summary, indent=2, ensure_ascii=False, default=str))
+    return 0
+
+
+def _cmd_feedback(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    from recommender.memory.adapter import MemoryUnavailableError, create_memory_adapter
+
+    memory_config = config.memory.model_copy(update={"enabled": True})
+    memory = create_memory_adapter(memory_config)
+    health = memory.health()
+    if not health.get("available", False):
+        raise SystemExit(f"memory backend unavailable: {health}")
+    metadata = {
+        "product_id": args.product_id,
+        "feedback": args.feedback,
+        "note": args.note,
+        "is_simulated": args.simulated,
+    }
+    text = f"User gave explicit {args.feedback} feedback for product {args.product_id}." + (
+        f" Note: {args.note}" if args.note else ""
+    )
+    try:
+        hit = memory.add(
+            user_id=args.user_id,
+            text=text,
+            metadata=metadata,
+            is_synthetic=args.simulated,
+        )
+        same_user = memory.read(args.user_id, args.product_id, limit=5)
+        other_user = memory.read("evaluation_isolation_probe", args.product_id, limit=5)
+    except MemoryUnavailableError as exc:
+        raise SystemExit(f"memory write failed: {exc}") from exc
+    leaked = any(item.memory_id == hit.memory_id for item in other_user)
+    payload = {
+        "memory": health,
+        "written": {
+            "memory_id": hit.memory_id,
+            "text": hit.text,
+            "metadata": hit.metadata,
+        },
+        "read_back_same_user": len(same_user),
+        "other_user_hits": len(other_user),
+        "user_isolation_ok": not leaked,
+        "is_simulated": args.simulated,
+    }
+    print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
+    return 0
+
+
 def _cmd_tiger_info(args: argparse.Namespace) -> int:
     from recommender.utils.io import read_json
 
@@ -907,6 +1005,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("tiger", "info"): _cmd_tiger_info,
         ("eval", "audit"): _cmd_eval_audit,
         ("eval", "pilot"): _cmd_eval_pilot,
+        ("recommend", None): _cmd_recommend,
+        ("feedback", None): _cmd_feedback,
         ("pool", None): _cmd_pool,
         ("rerank", None): _cmd_rerank,
         ("search", None): _cmd_search,

@@ -1,0 +1,355 @@
+{
+  "request_id": "req_2c9b41667a62441eb56a9658ecc4eaba",
+  "trace_id": "tr_0c413ae7749b4365932222d58329f6f5",
+  "user_id_hash": "037b10c24e56",
+  "query": "fragrance-free moisturizer for sensitive skin",
+  "memory": {
+    "health": {
+      "provider": "mem0",
+      "backend": "mem0",
+      "collection": "agr_user_memory",
+      "vector_store": {
+        "provider": "qdrant",
+        "host": "127.0.0.1",
+        "port": 6333,
+        "collection": "agr_user_memory",
+        "embedding_dim": 768,
+        "on_disk": false
+      },
+      "embedder": {
+        "model": "intfloat/multilingual-e5-base",
+        "revision": "d128750597153bb5987e10b1c3493a34e5a4502a",
+        "embedding_dim": 768,
+        "query_prefix": "query: ",
+        "passage_prefix": "passage: ",
+        "memory_action_prefixes": {
+          "add": "passage: ",
+          "update": "passage: ",
+          "search": "query: "
+        }
+      },
+      "user_id_isolation": "filters={'user_id': ...} on every search; payload guard on read",
+      "history_db_path": "<project>/artifacts/mem0/history.db",
+      "versions": {
+        "mem0ai": "2.2.1",
+        "qdrant-client": "1.20.0"
+      },
+      "available": true,
+      "initialized": true
+    },
+    "hits": 0,
+    "timing_ms": 7169.4,
+    "texts": []
+  },
+  "plan": {
+    "schema_version": "1.0",
+    "plan_id": "plan_8ab01f332359",
+    "parent_plan_id": null,
+    "plan_version": 1,
+    "mode": "initial",
+    "intent": {
+      "intent": "product_recommendation",
+      "category": "beauty",
+      "product_type": "moisturizer",
+      "usage_scenario": "sensitive skin daily skincare"
+    },
+    "constraints": {
+      "hard": [],
+      "soft": [
+        {
+          "attribute": "fragrance-free",
+          "source": "current_request",
+          "priority": "high"
+        },
+        {
+          "attribute": "suitable for sensitive skin",
+          "source": "current_request",
+          "priority": "high"
+        }
+      ]
+    },
+    "preferences": {
+      "current": [
+        "fragrance-free",
+        "for sensitive skin"
+      ],
+      "historical": [],
+      "negative": [],
+      "priority": [
+        "fragrance-free",
+        "sensitive skin suitability"
+      ]
+    },
+    "retrieval": {
+      "strategy": "semantic_priority",
+      "tiger": {
+        "enabled": false,
+        "candidate_budget": "standard"
+      },
+      "e5_faiss": {
+        "enabled": true,
+        "queries": [
+          "fragrance-free moisturizer for sensitive skin",
+          "unscented face moisturizer gentle for sensitive skin"
+        ],
+        "candidate_budget": "standard"
+      }
+    },
+    "ranking": {
+      "rerank_query": "fragrance-free moisturizer suitable for sensitive skin",
+      "priority_attributes": [
+        "fragrance-free",
+        "sensitive skin suitability",
+        "rating"
+      ]
+    },
+    "clarification": {
+      "required": false,
+      "question": null,
+      "reason": null
+    },
+    "assumptions": [],
+    "change_summary": []
+  },
+  "retrieval": {
+    "eligible": 78,
+    "unverified": 0,
+    "rejected": 0
+  },
+  "ranked_top": [
+    {
+      "product_id": "B07N5B8WWR",
+      "score": 0.998887836933136
+    },
+    {
+      "product_id": "B014T3QBLK",
+      "score": 0.9988167881965637
+    },
+    {
+      "product_id": "B086D9D35V",
+      "score": 0.9985170960426331
+    },
+    {
+      "product_id": "B001FYT87G",
+      "score": 0.9985141158103943
+    },
+    {
+      "product_id": "B072BKHJ7Z",
+      "score": 0.9981665015220642
+    },
+    {
+      "product_id": "B01G09X1PK",
+      "score": 0.9971103072166443
+    },
+    {
+      "product_id": "B01GUIQVZ8",
+      "score": 0.9965391159057617
+    },
+    {
+      "product_id": "B01MG4BD5U",
+      "score": 0.9964942336082458
+    },
+    {
+      "product_id": "B01IA9E9YU",
+      "score": 0.9962277412414551
+    },
+    {
+      "product_id": "B002SPZ29E",
+      "score": 0.9958199262619019
+    }
+  ],
+  "judgments": [
+    {
+      "product_id": "B07N5B8WWR",
+      "match": "partial_match",
+      "uncertainty": "medium"
+    },
+    {
+      "product_id": "B014T3QBLK",
+      "match": "partial_match",
+      "uncertainty": "medium"
+    },
+    {
+      "product_id": "B086D9D35V",
+      "match": "direct_match",
+      "uncertainty": "low"
+    },
+    {
+      "product_id": "B001FYT87G",
+      "match": "direct_match",
+      "uncertainty": "low"
+    },
+    {
+      "product_id": "B072BKHJ7Z",
+      "match": "partial_match",
+      "uncertainty": "medium"
+    },
+    {
+      "product_id": "B01G09X1PK",
+      "match": "partial_match",
+      "uncertainty": "medium"
+    },
+    {
+      "product_id": "B01GUIQVZ8",
+      "match": "partial_match",
+      "uncertainty": "medium"
+    },
+    {
+      "product_id": "B01MG4BD5U",
+      "match": "partial_match",
+      "uncertainty": "medium"
+    },
+    {
+      "product_id": "B01IA9E9YU",
+      "match": "direct_match",
+      "uncertainty": "low"
+    },
+    {
+      "product_id": "B002SPZ29E",
+      "match": "direct_match",
+      "uncertainty": "low"
+    }
+  ],
+  "controller": {
+    "action": "stop",
+    "stop_reason": "quality_satisfied",
+    "quality_satisfied": true,
+    "budget_exhausted": false,
+    "selected_products": [
+      "B07N5B8WWR",
+      "B014T3QBLK",
+      "B086D9D35V",
+      "B001FYT87G",
+      "B072BKHJ7Z"
+    ],
+    "reasons": [
+      "quality satisfied: valid=78 >= required=5",
+      "valid judgments=10 >= min_judgments=3",
+      "hard constraints satisfied with no unknown/failed check",
+      "quality thresholds are uncalibrated (config.controller.quality.calibrated=false)"
+    ],
+    "rounds": 1
+  },
+  "recommendation": {
+    "request_id": "req_2c9b41667a62441eb56a9658ecc4eaba",
+    "recommendations": [
+      {
+        "rank": 1,
+        "product_id": "B07N5B8WWR",
+        "title": "Facial Moisturizer. Preservative Free. Organic & 100% Natural Face Moisturizing Cream for Sensitive, Dry & Normal Skin - Anti-Aging and Anti-Wrinkle, for Women and Men. ORIGINAL FORMULA",
+        "price": 29.99,
+        "reasons": [
+          "这款面霜标明适合敏感、干性和中性肌肤使用，符合你对敏感肌的需求。",
+          "产品为乳霜质地，来自 Botanical Green Care 品牌，售价 29.99 美元。"
+        ],
+        "evidence_refs": [
+          "judgment.attribute_evidence.suitable for sensitive skin.status",
+          "evidence.details.Item Form"
+        ],
+        "limitations": [
+          "商品未明确说明是否无香型，无法确认完全符合无香要求。"
+        ]
+      },
+      {
+        "rank": 2,
+        "product_id": "B014T3QBLK",
+        "title": "Living Nature Sensitive Skin Day Moisture Cream",
+        "price": null,
+        "reasons": [
+          "Living Nature 敏感肌日间保湿霜在标题中明确面向敏感肌肤。",
+          "产品为乳霜质地，可用于全身。"
+        ],
+        "evidence_refs": [
+          "judgment.attribute_evidence.suitable for sensitive skin.status",
+          "evidence.details.Use for"
+        ],
+        "limitations": [
+          "商品未说明是否无香型，且标注香味为椰子味，可能不符合无香偏好。",
+          "价格信息缺失，无法判断预算是否合适。"
+        ]
+      },
+      {
+        "rank": 3,
+        "product_id": "B086D9D35V",
+        "title": "Skin Repair Rx Dermatological Moisturizing Lotion, Fragrance Free, Irritated Skin, Sensitive Skin, Soothing lotion with Emu oil, Shea Butter, Vitamins A, E, C & Omega-3, 6, 9 Non-greasy, Super Hydrating Formula, 17 ounces",
+        "price": null,
+        "reasons": [
+          "这款乳液明确标注无香型，符合你对无香保湿产品的偏好。",
+          "标题标明适合敏感和受刺激肌肤，并含有乳木果油及维生素 A、E、C 等成分。",
+          "产品为 17 盎司大容量乳液，质地不油腻。"
+        ],
+        "evidence_refs": [
+          "judgment.attribute_evidence.fragrance-free.status",
+          "judgment.attribute_evidence.suitable for sensitive skin.status",
+          "evidence.details.Unit Count"
+        ],
+        "limitations": [
+          "价格信息缺失，无法判断预算是否合适。"
+        ]
+      },
+      {
+        "rank": 4,
+        "product_id": "B001FYT87G",
+        "title": "EltaMD Intense Face and Body Moisturizer for Sensitive & Dry Skin, Moisturizing Facial Post Treatment Lotion, Fragrance-Free, 3.8 oz",
+        "price": null,
+        "reasons": [
+          "EltaMD 这款保湿产品标注无香型，符合你对无香配方的要求。",
+          "标题说明适用于敏感和干性肌肤，也可用于面部及身体。",
+          "产品为 3.8 盎司乳霜，品牌为 EltaMD。"
+        ],
+        "evidence_refs": [
+          "judgment.attribute_evidence.fragrance-free.status",
+          "judgment.attribute_evidence.suitable for sensitive skin.status",
+          "evidence.details.Brand"
+        ],
+        "limitations": [
+          "价格信息缺失，无法判断预算是否合适。"
+        ]
+      },
+      {
+        "rank": 5,
+        "product_id": "B072BKHJ7Z",
+        "title": "Aveeno Ultra-Calming Daily BldGO Moisturizer For Sensitive Skin With Broad Spectrum Spf 15, 4 oz (Pack of 3)",
+        "price": null,
+        "reasons": [
+          "Aveeno 这款日常保湿产品在标题中明确面向敏感肌肤。",
+          "产品为 3 支装，共 12 盎司，并带有 SPF 15 防晒。"
+        ],
+        "evidence_refs": [
+          "judgment.attribute_evidence.suitable for sensitive skin.status",
+          "evidence.details.Number of Items"
+        ],
+        "limitations": [
+          "商品未说明是否无香型，无法确认符合无香要求。",
+          "价格信息缺失，无法判断预算是否合适。"
+        ]
+      }
+    ],
+    "model": "deepseek-flash",
+    "stop_reason": "quality_satisfied",
+    "quality_satisfied": true,
+    "budget_exhausted": false,
+    "is_synthetic": false,
+    "generation_metadata": {
+      "prompt_version": "recommendation_generator_v1",
+      "attempts": 1,
+      "api_retries": 0,
+      "format_retries": 0,
+      "fallback_used": false,
+      "latency_ms": 3070.0,
+      "prompt_tokens": 4268,
+      "completion_tokens": 617,
+      "candidate_count": 5,
+      "error_kind": null,
+      "error": null
+    }
+  },
+  "generator_model": "deepseek-flash",
+  "timing_ms": {
+    "memory": 7169.4,
+    "workflow": 42019.7,
+    "generator": 3075.7,
+    "total": 61647.9
+  },
+  "trace_path": "/mnt/agr-data/runs/e2e/req_2c9b41667a62441eb56a9658ecc4eaba/trace.jsonl"
+}

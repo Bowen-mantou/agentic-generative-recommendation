@@ -1,0 +1,143 @@
+{
+  "request_id": "req_e88fd89546f14a608ff46b5b0919a5e8",
+  "trace_id": "tr_af9ec4fc00584a8e856da8f25db4076d",
+  "user_id_hash": "24392f385a1c",
+  "query": "fragrance-free moisturizer under $1",
+  "memory": {
+    "health": {
+      "available": false,
+      "backend": "disabled"
+    },
+    "hits": 0,
+    "timing_ms": 0.0,
+    "texts": []
+  },
+  "plan": {
+    "schema_version": "1.0",
+    "plan_id": "plan_a5b964f01861",
+    "parent_plan_id": "plan_e5eb8a11c4b7",
+    "plan_version": 2,
+    "mode": "replan",
+    "intent": {
+      "intent": "product_recommendation",
+      "category": "beauty",
+      "product_type": "moisturizer",
+      "usage_scenario": null
+    },
+    "constraints": {
+      "hard": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "value": 1,
+          "unit": "USD",
+          "source": "current_request"
+        }
+      ],
+      "soft": [
+        {
+          "attribute": "fragrance-free",
+          "source": "current_request",
+          "priority": "high"
+        }
+      ]
+    },
+    "preferences": {
+      "current": [
+        "fragrance-free",
+        "moisturizer"
+      ],
+      "historical": [],
+      "negative": [],
+      "priority": [
+        "fragrance-free",
+        "price"
+      ]
+    },
+    "retrieval": {
+      "strategy": "hybrid_balanced",
+      "tiger": {
+        "enabled": false,
+        "candidate_budget": "standard"
+      },
+      "e5_faiss": {
+        "enabled": true,
+        "queries": [
+          "unscented moisturizer one dollar",
+          "sensitive skin face cream no fragrance budget",
+          "cheap fragrance free lotion for dry skin",
+          "affordable unscented daily moisturizer travel size"
+        ],
+        "candidate_budget": "expanded"
+      }
+    },
+    "ranking": {
+      "rerank_query": "fragrance-free moisturizer at or under one US dollar, prioritizing unscented sensitive-skin formulas",
+      "priority_attributes": [
+        "fragrance-free",
+        "price",
+        "rating"
+      ]
+    },
+    "clarification": {
+      "required": false,
+      "question": null,
+      "reason": null
+    },
+    "assumptions": [],
+    "change_summary": [
+      "针对上一轮无商品满足硬约束的问题，围绕核心需求重写并扩充 e5_faiss 检索 query，全部替换为新表述。",
+      "将召回策略由 semantic_priority 调整为 hybrid_balanced，并把 e5_faiss 候选档位提升为 expanded 以扩大召回面。",
+      "精排查询与优先级属性更新，加入 rating 作为次要排序参考；价格 ≤ $1 与 fragrance-free 硬约束保持不变。"
+    ]
+  },
+  "retrieval": {
+    "eligible": 0,
+    "unverified": 149,
+    "rejected": 38
+  },
+  "ranked_top": [],
+  "judgments": [],
+  "controller": {
+    "action": "stop",
+    "stop_reason": "budget_exhausted",
+    "quality_satisfied": false,
+    "budget_exhausted": true,
+    "selected_products": [],
+    "reasons": [
+      "budget exhausted (replan rounds); forced stop",
+      "budget exhaustion is not a quality pass"
+    ],
+    "rounds": 2
+  },
+  "recommendation": {
+    "request_id": "req_e88fd89546f14a608ff46b5b0919a5e8",
+    "recommendations": [],
+    "model": "fallback_template",
+    "stop_reason": "budget_exhausted",
+    "quality_satisfied": false,
+    "budget_exhausted": true,
+    "is_synthetic": false,
+    "generation_metadata": {
+      "prompt_version": "recommendation_generator_v1",
+      "attempts": 0,
+      "api_retries": 0,
+      "format_retries": 0,
+      "fallback_used": true,
+      "latency_ms": 0.1,
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "candidate_count": 0,
+      "error_kind": "no_candidates",
+      "error": "no Controller-selected candidate was provided"
+    }
+  },
+  "generator_model": "fallback_template",
+  "timing_ms": {
+    "memory": 0.0,
+    "workflow": 21290.3,
+    "generator": 1.8,
+    "total": 25333.5
+  },
+  "trace_path": "/mnt/agr-data/runs/e2e/req_e88fd89546f14a608ff46b5b0919a5e8/trace.jsonl"
+}

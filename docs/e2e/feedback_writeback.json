@@ -1,0 +1,51 @@
+{
+  "memory": {
+    "provider": "mem0",
+    "backend": "mem0",
+    "collection": "agr_user_memory",
+    "vector_store": {
+      "provider": "qdrant",
+      "host": "127.0.0.1",
+      "port": 6333,
+      "collection": "agr_user_memory",
+      "embedding_dim": 768,
+      "on_disk": false
+    },
+    "embedder": {
+      "model": "intfloat/multilingual-e5-base",
+      "revision": "d128750597153bb5987e10b1c3493a34e5a4502a",
+      "embedding_dim": 768,
+      "query_prefix": "query: ",
+      "passage_prefix": "passage: ",
+      "memory_action_prefixes": {
+        "add": "passage: ",
+        "update": "passage: ",
+        "search": "query: "
+      }
+    },
+    "user_id_isolation": "filters={'user_id': ...} on every search; payload guard on read",
+    "history_db_path": "<project>/artifacts/mem0/history.db",
+    "versions": {
+      "mem0ai": "2.2.1",
+      "qdrant-client": "1.20.0"
+    },
+    "available": true,
+    "initialized": true
+  },
+  "written": {
+    "memory_id": "208b5158-5c52-49fb-89dd-65543d034c83",
+    "text": "User gave explicit positive feedback for product B07N5B8WWR. Note: Liked the fragrance-free formula",
+    "metadata": {
+      "product_id": "B07N5B8WWR",
+      "feedback": "positive",
+      "note": "Liked the fragrance-free formula",
+      "is_simulated": false,
+      "is_synthetic": false,
+      "role": "user"
+    }
+  },
+  "read_back_same_user": 1,
+  "other_user_hits": 0,
+  "user_isolation_ok": true,
+  "is_simulated": false
+}

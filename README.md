@@ -54,15 +54,21 @@ replaced with a mock.
 | Phase 2 — fusion, constraints, candidate pool | ✅ done | Two-stage RRF, three-state constraint evaluator |
 | Phase 3 — Qwen3-Reranker-0.6B | ✅ done | Transformers-native CPU baseline, frozen |
 | Phase 4 — TIGER | ⛔ **No-Go** | Real RQ-VAE + autoregressive generator trained; Recall@10 0.15%/0.25%/0.07% (A1/B1/B2) vs popularity 0.34–0.82% and E5-profile 2.9–4.4%. No full training. [Report](docs/phase4/D1_B1_B2_GATE_REPORT.md) |
-| Phase 5 — Planner / Judgment / Controller | ✅ implemented + hardened | DeepSeek client, Planner/Replanner, per-product Judgment, LangGraph workflow; real end-to-end CLI wiring still pending |
-| Phase 6 — Generator / Memory | 🟡 partial | Qdrant + multilingual E5 deployment validated; Generator and Mem0 adapter not implemented |
+| Phase 5 — Planner / Judgment / Controller | ✅ real E2E | DeepSeek Planner/Judgment + LangGraph controller executed end-to-end; STOP/REPLAN traces |
+| Phase 6 — Generator / Memory | ✅ implemented | DeepSeek Generator and Mem0 Adapter; real add/read/isolation validated in E2E |
 | Phase 7 — evaluation | ✅ v1.0 frozen | 2,685 temporal samples recovered; 2,551 queries; 528 human-reviewed (67 PASS / 461 FAIL); **2,224 final samples frozen**; 0 leakage. [Final report](docs/phase7/v1.0/final_coverage_report.json) |
 
-Test snapshot: **260 passed / 14 skipped** locally; **271 passed / 3 skipped** on the
-CPU server (LangGraph integration tests included). Unit tests run without GPUs,
-model weights, API keys or datasets.
+Test snapshot: **308 passed / 15 skipped** locally; the real E2E integration test passes on the
+CPU server (35.9 s). Unit tests run without GPUs, model weights, API keys or datasets.
 
 ## Quick start
+
+End-to-end (real E5 + Qwen3-Reranker + DeepSeek; see [runbook](docs/E2E_RUNBOOK.md)):
+
+```bash
+agr recommend --query "fragrance-free moisturizer for sensitive skin" \n  --user-id demo_user --catalog artifacts/catalog/all_beauty_v2 \n  --bundle artifacts/faiss/e5-base-v2_all_beauty_v2
+agr feedback --user-id demo_user --product-id <product_id> --feedback positive
+```
 
 ```bash
 python -m venv .venv
@@ -112,7 +118,8 @@ src/recommender/
   constraints/    single Python hard-constraint evaluator
   reranking/      Qwen3-Reranker-0.6B (Transformers native)
   api/ planner/ judgment/ controller/  Phase 5
-  generation/ memory/                  Phase 6 placeholders
+  e2e/                                 agr recommend / feedback service
+  generation/ memory/                  DeepSeek Generator + Mem0 adapter
   evaluation/     temporal samples, profiles, query generator/auditor, validation, pilot
   interaction_history/ SQLite event store and review→event ETL
   observability/  JSON logs, request/trace context, JSONL trace
@@ -129,7 +136,8 @@ tests/integration/ model/index/service tests (opt-in; skipped by default)
 - Phase reports: [Phase 1](docs/audit/phase1-report.md), [Phase 2](docs/audit/phase2-report.md), [Phase 3](docs/audit/phase3-report.md)
 - TIGER: [implementation plan](docs/phase4/TIGER_IMPLEMENTATION_PLAN.md), [pilot](docs/phase4/TIGER_PILOT_REPORT.md), [D11 gate report](docs/phase4/D1_B1_B2_GATE_REPORT.md)
 - Phase 5: [Planner / Judgment / Controller](docs/phase5/PLANNER_JUDGMENT_CONTROLLER.md)
-- Phase 6: [Qdrant + multilingual E5 deployment](docs/phase6/D9_MEMORY_DEPLOYMENT.md)
+- E2E: [integration report](docs/E2E_INTEGRATION_REPORT.md), [runbook](docs/E2E_RUNBOOK.md), [acceptance checklist](docs/ACCEPTANCE_CHECKLIST.md)
+- Phase 6: [Generator + Mem0 adapter](docs/phase6/GENERATOR_MEMORY.md), [Qdrant + multilingual E5 deployment](docs/phase6/D9_MEMORY_DEPLOYMENT.md)
 - Phase 7: [dataset protocol](docs/phase7/EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md), [pilot report](docs/phase7/PILOT_REPORT_V0.1.md), [human-query protocol](docs/phase7/EVALUATION_PROTOCOL_D10.md)
 - Decisions and risk register: [docs/decisions/FINAL_DECISIONS_AND_RISK_REGISTER.md](docs/decisions/FINAL_DECISIONS_AND_RISK_REGISTER.md)
 
@@ -145,9 +153,9 @@ tests/integration/ model/index/service tests (opt-in; skipped by default)
 
 **Not yet verified / intentionally incomplete**
 
-- End-to-end real CLI (`Planner → E5 → pool → reranker → Judgment → LangGraph controller`) is not wired.
-- Phase 6 Generator and Mem0 adapter are not implemented; `Memory.add` is untested.
-- Controller thresholds are uncalibrated (`calibrated: false`); the Phase 7 v1.0 evaluation set is frozen (2,224 samples), but full Reranker comparison and end-to-end service wiring are still pending.
+- End-to-end real E2E (E5-only) is wired and tested; it is **not** the dual-path TIGER+E5 system.
+- Controller thresholds remain uncalibrated (`calibrated: false`); the frozen 2,224-sample v1.0 set still lacks a full Reranker/Cluster Bootstrap run.
+- Mem0 `infer=True`, BM25 and multi-process concurrency are not verified.
 - TIGER is No-Go at current data scale and is not used as the primary recall path.
 
 ## Limitations

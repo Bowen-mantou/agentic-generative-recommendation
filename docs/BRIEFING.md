@@ -1,5 +1,9 @@
 # 项目讨论简报（Current Status Briefing）
 
+> **2026-11-25 01:15 更新：E5-only 真实 E2E G0–G6 已跑通；Phase 5/6 已接线。**
+> 最新细节见 [STATUS.md](STATUS.md) 与 [E2E_INTEGRATION_REPORT.md](E2E_INTEGRATION_REPORT.md)。
+> 以下正文保留 00:23 的历史快照，避免抹掉讨论过程；以最新状态为准。
+
 - **生成时间：2026-11-25 00:23（Asia/Shanghai）**
 - 仓库：https://github.com/Bowen-mantou/agentic-generative-recommendation
 - 当前提交：`0488ec3`（GitHub CI：Python 3.10/3.11 均通过）
@@ -11,9 +15,9 @@
 
 - **评测数据 v1.0 已冻结**：2,685 条时间样本 → 2,551 条 Query → 528 条人工复核 →
   **2,224 条最终纳入**，0 条 Target 泄漏。
-- **产品服务还不能算“全线跑通”**：各模块分别真实可用，但没有一条真实的
-  `Planner → E5 → Fusion → Reranker → Judgment → LangGraph Controller → Generator → Memory`
-  单命令端到端链路。
+- **产品服务（E5-only）已端到端跑通**：`agr recommend` 已真实串联
+  Memory → Planner → E5 → Fusion → Reranker → Evidence → Judgment → LangGraph Controller →
+  Generator；但 **TIGER 不在主线**，不是双路召回完成。
 - **Phase 4 TIGER 为 D11 No-Go**：真实 RQ-VAE + 自回归训练/生成完成，但 A1/B1/B2
   均未超过热度基线，Hybrid 未给 E5 带来增量；未全量训练，不作为默认召回。
 
