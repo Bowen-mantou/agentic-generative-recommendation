@@ -1,0 +1,31 @@
+# Retrieval configuration (E5 + FAISS path, candidate budgets, RRF constants).
+# Top-level keys mirror AppConfig fields, so a typo fails validation instead of being
+# silently ignored.
+retrieval:
+  e5:
+    # One FAISS query returns top_k_per_query products; several Planner queries are
+    # merged with RRF inside the E5 path (module 3 §4.3).
+    top_k_per_query: 50
+    max_queries: 5
+    query_max_chars: 300
+    rrf_k: 60
+    index:
+      # Exact inner-product index over L2-normalised vectors == cosine similarity.
+      type: IndexFlatIP
+      normalize_vectors: true
+      metric: cosine
+
+  # Planner only chooses a tier ("standard" / "expanded"); the mapping to concrete
+  # candidate counts lives here (module 2 §4.4, AGENTS.md §2.6).
+  budgets:
+    standard:
+      tiger_candidates: 50
+      e5_candidates: 100
+    expanded:
+      tiger_candidates: 100
+      e5_candidates: 200
+
+  fusion:
+    # Cross-path RRF smoothing constant (module 3 §5.4).
+    rrf_k: 60
+    max_candidates: 300

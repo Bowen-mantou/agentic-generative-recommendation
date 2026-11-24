@@ -1,0 +1,34 @@
+{
+  "load_and_verify_s": 1.0,
+  "warm_search_ms_p50": 33.3,
+  "warm_search_ms_min": 29.8,
+  "warm_search_ms_max": 185.2,
+  "fused_hits": 146,
+  "top5": [
+    {
+      "rank": 1,
+      "product_id": "B0757RW9XK",
+      "sim": 0.86896
+    },
+    {
+      "rank": 2,
+      "product_id": "B01MR7FQB8",
+      "sim": 0.860771
+    },
+    {
+      "rank": 3,
+      "product_id": "B00VU0I1ZK",
+      "sim": 0.833735
+    },
+    {
+      "rank": 4,
+      "product_id": "B010GAN49C",
+      "sim": 0.860671
+    },
+    {
+      "rank": 5,
+      "product_id": "B002SPZ29E",
+      "sim": 0.849415
+    }
+  ]
+}

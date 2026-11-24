@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "plan_001",
+  "parent_plan_id": null,
+  "plan_version": 1,
+  "mode": "initial",
+  "intent": {
+    "intent": "product_recommendation",
+    "category": "Beauty",
+    "product_type": "moisturizer",
+    "usage_scenario": "daily_use"
+  },
+  "constraints": {
+    "hard": [
+      {
+        "field": "price",
+        "operator": "lte",
+        "value": 30,
+        "unit": "USD",
+        "source": "current_request"
+      }
+    ],
+    "soft": [
+      {
+        "attribute": "lightweight",
+        "source": "current_request",
+        "priority": "high"
+      }
+    ]
+  },
+  "preferences": {
+    "current": ["lightweight", "daily_use"],
+    "historical": ["fragrance_free"],
+    "negative": ["strong_fragrance"],
+    "priority": ["price", "lightweight", "fragrance_free"]
+  },
+  "retrieval": {
+    "strategy": "hybrid_balanced",
+    "tiger": {"enabled": true, "candidate_budget": "standard"},
+    "e5_faiss": {
+      "enabled": true,
+      "queries": [
+        "lightweight daily moisturizer",
+        "fragrance-free moisturizing cream"
+      ],
+      "candidate_budget": "standard"
+    }
+  },
+  "ranking": {
+    "rerank_query": "Daily moisturizer under $30 with lightweight texture, preferably fragrance-free.",
+    "priority_attributes": ["price", "lightweight", "fragrance_free"]
+  },
+  "clarification": {"required": false, "question": null, "reason": null},
+  "assumptions": [],
+  "change_summary": []
+}

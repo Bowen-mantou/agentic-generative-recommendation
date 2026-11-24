@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "index_version": "e5-base-v2_all_beauty_v2",
+  "catalog_version": "all_beauty_v2",
+  "text_builder_version": "embedding=product_text.embedding.v1;rerank=product_text.rerank.v1",
+  "model_id": "intfloat/e5-base-v2",
+  "model_revision": "main",
+  "embedding_dim": 768,
+  "normalize_vectors": true,
+  "metric": "cosine",
+  "index_type": "IndexFlatIP",
+  "num_vectors": 112590,
+  "query_prefix": "query:",
+  "passage_prefix": "passage:",
+  "max_length": 512,
+  "created_at": "2026-11-23T18:22:37.824254+00:00",
+  "index_sha256": "09cc6874a946bdfa4bcfba7be6d304ba539413bd792aef26e944426e99473697",
+  "product_ids_sha256": "428098606114839192a072b6356c6e39dd2cb256d940fc545097c0b177251ed9",
+  "catalog_manifest_sha256": "5c047593d158cc952a99ff5bb56e82f20e4885688eab473f84a16e6f54a82d62"
+}

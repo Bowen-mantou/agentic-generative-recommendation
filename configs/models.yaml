@@ -1,0 +1,63 @@
+# Model configuration. Model identities are fixed by AGENTS.md / design docs V1.1.
+# Changing a model here is a configuration change only; changing the project baseline
+# requires an ADR under docs/decisions/.
+e5:
+  # E5 checkpoint was listed as "to be verified" in AGENTS.md §8.4. Default chosen for
+  # the English Amazon Reviews 2023 corpus; pin `revision` to a commit SHA before
+  # freezing artifacts for evaluation.
+  model_id: intfloat/e5-base-v2
+  revision: main
+  query_prefix: "query: "
+  passage_prefix: "passage: "
+  embedding_dim: 768
+  max_length: 512
+  batch_size: 64
+  device: auto
+  normalize: true
+
+reranker:
+  primary_model_id: Qwen/Qwen3-Reranker-0.6B
+  baseline_model_id: BAAI/bge-reranker-v2-m3
+  max_length: 2048
+  batch_size: 8
+  device: auto
+  instruction: |
+    Rank products according to the user's shopping requirements and preferences.
+    Prioritize explicit requirements and relevant product attributes.
+    Consider the user's stated preferences when comparing candidate products.
+    Do not assume missing product attributes are satisfied.
+
+tiger:
+  # Phase 4 (stage B) parameters. The generator backbone is not chosen yet; it must not
+  # be silently replaced by a mock. See docs/audit/implementation-plan.md.
+  embedding_model_id: intfloat/e5-base-v2
+  num_semantic_id_levels: 3
+  codebook_size: 256
+  rqvae:
+    latent_dim: 32
+    hidden_dim: 128
+    commitment_weight: 0.25
+    epochs: 20
+    batch_size: 1024
+    learning_rate: 0.001
+  generator:
+    backbone_model_id: null
+    max_length: 16
+    beam_size: 20
+    top_k: 50
+    device: auto
+
+deepseek:
+  base_url: https://api.deepseek.com
+  # Verified against GET /v1/models on 2026-11-24: deepseek-flash, deepseek-v4-pro.
+  planner_model: deepseek-flash
+  judgment_model: deepseek-flash
+  generator_model: deepseek-flash
+  temperature: 0.2
+  max_tokens: 4096
+  timeout_s: 60
+  max_retries: 2
+  max_concurrency: 4
+
+generation:
+  top_k: 5

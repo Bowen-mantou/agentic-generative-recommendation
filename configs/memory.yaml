@@ -1,0 +1,18 @@
+# User memory configuration (Phase 6). Disabled by default: Phase 0/1 do not write memory.
+# Mem0 keeps semantic preferences; structured interaction events stay in SQLite and are
+# never treated as TIGER sequences from free text (AGENTS.md §2.2, §3).
+memory:
+  enabled: false
+
+  mem0:
+    vector_store:
+      provider: qdrant
+      host: 127.0.0.1
+      port: 6333
+      collection: agr_user_memory
+    embedder:
+      provider: huggingface
+      model: intfloat/e5-base-v2
+
+  sqlite:
+    path: data/processed/interaction_history.db

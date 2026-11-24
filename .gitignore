@@ -1,0 +1,54 @@
+# --- secrets / local environment -------------------------------------------------
+# Local credential guides must stay on disk, never in the repository (Q8).
+HKU-GPU与S4000使用指南.md
+*.local.md
+.env
+.env.*
+!.env.example
+
+# --- python ---------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.ipynb_checkpoints/
+
+# --- machine-local config overlay ------------------------------------------------
+configs/local.yaml
+
+# --- data (never commit raw datasets) -------------------------------------------
+data/raw/*
+data/interim/*
+data/processed/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/samples/
+data/samples/*
+!data/samples/.gitkeep
+
+# --- model artifacts and indexes ------------------------------------------------
+artifacts/**
+!artifacts/**/.gitkeep
+
+# --- run logs and traces --------------------------------------------------------
+runs/
+logs/
+*.jsonl
+!tests/fixtures/**/*.jsonl
+
+# --- os / editor ----------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

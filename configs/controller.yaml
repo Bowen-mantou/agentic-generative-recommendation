@@ -1,0 +1,22 @@
+# Adaptive Controller configuration.
+# The controller is deterministic Python (no Controller LLM). Every threshold that can
+# only be justified by experiments is explicitly marked `calibrated: false` until the
+# validation split fixes it — do not quote these as validated numbers.
+controller:
+  budget:
+    remaining_replan_rounds: 2
+    remaining_retrieval_calls: 6
+    remaining_api_calls: 60
+
+  quality:
+    required_count: 5
+    min_valid_candidates: 3
+    min_mean_rerank_score: null
+    max_unknown_attribute_ratio: 0.5
+    min_diversity: null
+    calibrated: false
+
+  loop_guard:
+    max_replan_rounds: 2
+    max_rounds: 3
+    duplicate_query_similarity: 0.95

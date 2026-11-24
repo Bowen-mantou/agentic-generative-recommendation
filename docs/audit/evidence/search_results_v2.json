@@ -1,0 +1,157 @@
+{
+  "queries": [
+    "lightweight daily moisturizer for sensitive skin",
+    "fragrance free face cream under 30 dollars",
+    "hydrating moisturizer for dry skin"
+  ],
+  "latency_ms": 13753.84,
+  "fused": [
+    {
+      "rank": 1,
+      "product_id": "B0757RW9XK",
+      "similarity": 0.86896,
+      "matched_query": "lightweight daily moisturizer for sensitive skin",
+      "catalog": {
+        "title": "Daily Face Moisturizer Serum - Hydrating Vitamin Lotion For Daily Use With Dispensing Pump - With Aloe Vera Jojoba Oil Shea Butter Green Tea For Sensitive Dry And Oily Skin - Premium Nature",
+        "price": null,
+        "main_category": "All Beauty"
+      }
+    },
+    {
+      "rank": 2,
+      "product_id": "B01MR7FQB8",
+      "similarity": 0.860771,
+      "matched_query": "lightweight daily moisturizer for sensitive skin",
+      "catalog": {
+        "title": "Shi Hydrate, Facial Moisturizer",
+        "price": null,
+        "main_category": "All Beauty"
+      }
+    },
+    {
+      "rank": 3,
+      "product_id": "B00VU0I1ZK",
+      "similarity": 0.833735,
+      "matched_query": "fragrance free face cream under 30 dollars",
+      "catalog": {
+        "title": "Aveeno Positively Radiant Daily Face Moisturizer Broad Spectrum SPF 30, 2.3 Fl. Oz. (Pack of 12)",
+        "price": 275.33,
+        "main_category": "All Beauty"
+      }
+    },
+    {
+      "rank": 4,
+      "product_id": "B010GAN49C",
+      "similarity": 0.860671,
+      "matched_query": "hydrating moisturizer for dry skin",
+      "catalog": {
+        "title": "Dr. Karabelnik Collagene Moisturizing Day Cream for All Skin Types 50 Ml 1.69 Fl Oz",
+        "price": null,
+        "main_category": "All Beauty"
+      }
+    },
+    {
+      "rank": 5,
+      "product_id": "B002SPZ29E",
+      "similarity": 0.849415,
+      "matched_query": "fragrance free face cream under 30 dollars",
+      "catalog": {
+        "title": "basqnyc Mega Moisture Cream Fragrance Free Tube",
+        "price": null,
+        "main_category": "All Beauty"
+      }
+    }
+  ],
+  "per_query": [
+    {
+      "query": "lightweight daily moisturizer for sensitive skin",
+      "hits": [
+        {
+          "rank": 1,
+          "product_id": "B00YF3J4OG",
+          "similarity": 0.8823409676551819
+        },
+        {
+          "rank": 2,
+          "product_id": "B014T3QBLK",
+          "similarity": 0.8813987970352173
+        },
+        {
+          "rank": 3,
+          "product_id": "B0147KM3ZI",
+          "similarity": 0.8776301741600037
+        },
+        {
+          "rank": 4,
+          "product_id": "B01FE56RFC",
+          "similarity": 0.8702030181884766
+        },
+        {
+          "rank": 5,
+          "product_id": "B007WQBL9O",
+          "similarity": 0.869070827960968
+        }
+      ]
+    },
+    {
+      "query": "fragrance free face cream under 30 dollars",
+      "hits": [
+        {
+          "rank": 1,
+          "product_id": "B002SPZ29E",
+          "similarity": 0.8494148850440979
+        },
+        {
+          "rank": 2,
+          "product_id": "B002K4NP1U",
+          "similarity": 0.8441016674041748
+        },
+        {
+          "rank": 3,
+          "product_id": "B071CZTDCR",
+          "similarity": 0.8415533900260925
+        },
+        {
+          "rank": 4,
+          "product_id": "B001W4BTPS",
+          "similarity": 0.84154212474823
+        },
+        {
+          "rank": 5,
+          "product_id": "B099PG4DLS",
+          "similarity": 0.8381678462028503
+        }
+      ]
+    },
+    {
+      "query": "hydrating moisturizer for dry skin",
+      "hits": [
+        {
+          "rank": 1,
+          "product_id": "B094XKS2QY",
+          "similarity": 0.8772706389427185
+        },
+        {
+          "rank": 2,
+          "product_id": "B01AE6ARXO",
+          "similarity": 0.8770558834075928
+        },
+        {
+          "rank": 3,
+          "product_id": "B01GSGDRR2",
+          "similarity": 0.8713181614875793
+        },
+        {
+          "rank": 4,
+          "product_id": "B01M1A0H4Z",
+          "similarity": 0.8704549670219421
+        },
+        {
+          "rank": 5,
+          "product_id": "B018TZTS96",
+          "similarity": 0.8703168630599976
+        }
+      ]
+    }
+  ]
+}

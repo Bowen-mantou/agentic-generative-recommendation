@@ -1,0 +1,296 @@
+"""``agr`` command-line entry point.
+
+Phase 0/1 commands:
+
+* ``version`` / ``config show|validate``
+* ``catalog download|build`` — Amazon Reviews 2023 metadata -> versioned catalog
+* ``index build|info`` — catalog -> E5 + FAISS bundle
+* ``search`` — real retrieval over a built bundle
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections.abc import Sequence
+from pathlib import Path
+
+from recommender import __version__
+from recommender.catalog.amazon import download_file, metadata_url
+from recommender.catalog.build import build_catalog, load_products, load_text_pairs
+from recommender.config import AppConfig, Settings, load_settings
+from recommender.observability.logging import configure_logging, get_logger
+from recommender.retrieval.e5.artifacts import build_bundle, load_retriever, verify_bundle
+from recommender.retrieval.e5.encoder import E5Encoder
+
+_LOGGER = get_logger(__name__)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="agr", description="Agentic Generative Recommendation")
+    parser.add_argument("--config-dir", type=Path, default=None, help="override configs/ directory")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser("version", help="print the package version")
+
+    config_parser = subparsers.add_parser("config", help="inspect the loaded configuration")
+    config_sub = config_parser.add_subparsers(dest="config_command", required=True)
+    config_sub.add_parser("show", help="print the resolved configuration as JSON")
+    config_sub.add_parser("validate", help="validate configs and report resolved paths")
+
+    catalog_parser = subparsers.add_parser("catalog", help="Amazon catalog ingestion")
+    catalog_sub = catalog_parser.add_subparsers(dest="catalog_command", required=True)
+    download = catalog_sub.add_parser("download", help="download raw category metadata")
+    download.add_argument("--category", required=True)
+    download.add_argument("--dest", type=Path, default=None)
+    download.add_argument("--endpoint", default=None, help="HF endpoint (hf-mirror.com)")
+    download.add_argument("--force", action="store_true")
+
+    build = catalog_sub.add_parser("build", help="build a versioned catalog from metadata")
+    build.add_argument("--meta", type=Path, required=True)
+    build.add_argument("--category", required=True)
+    build.add_argument("--version", default=None)
+    build.add_argument("--limit", type=int, default=None)
+    build.add_argument("--out", type=Path, default=None)
+
+    index_parser = subparsers.add_parser("index", help="E5 + FAISS index bundles")
+    index_sub = index_parser.add_subparsers(dest="index_command", required=True)
+    index_build = index_sub.add_parser("build", help="encode a catalog and build FAISS")
+    index_build.add_argument("--catalog", type=Path, required=True)
+    index_build.add_argument("--out", type=Path, default=None)
+    index_build.add_argument("--version", default=None)
+    index_build.add_argument("--device", default=None)
+    index_build.add_argument("--batch-size", type=int, default=None)
+    index_info = index_sub.add_parser("info", help="verify a bundle and print its manifest")
+    index_info.add_argument("--bundle", type=Path, required=True)
+
+    search = subparsers.add_parser("search", help="query a built E5 bundle")
+    search.add_argument("--bundle", type=Path, required=True)
+    search.add_argument("--query", action="append", required=True)
+    search.add_argument("--top-k", type=int, default=10)
+    search.add_argument("--per-query-k", type=int, default=None)
+    search.add_argument("--device", default=None)
+    search.add_argument("--catalog", type=Path, default=None)
+    search.add_argument("--with-texts", action="store_true")
+    return parser
+
+
+def _settings(args: argparse.Namespace) -> Settings:
+    return load_settings(config_dir=args.config_dir)
+
+
+def _configure_logging(config: AppConfig) -> None:
+    configure_logging(
+        config.logging.level,
+        json_output=config.logging.json_output,
+        include_context=config.logging.include_context,
+    )
+
+
+def _cmd_version(_: argparse.Namespace) -> int:
+    print(__version__)
+    return 0
+
+
+def _cmd_config_show(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    configure_logging(
+        settings.config.logging.level,
+        json_output=False,
+        include_context=settings.config.logging.include_context,
+    )
+    print(json.dumps(settings.config.public_dict(), indent=2, ensure_ascii=False))
+    return 0
+
+
+def _cmd_config_validate(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    configure_logging(config.logging.level, json_output=False)
+    resolved = config.paths.resolved(config.project_root)
+    print(f"config valid: {config.schema_version}")
+    for name, path in resolved.items():
+        state = "exists" if path.exists() else "missing"
+        print(f"  {name:<16} {path}  [{state}]")
+    print(f"  deepseek key      {'set' if settings.has_deepseek_api_key() else 'not set'}")
+    return 0
+
+
+def _cmd_catalog_download(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    destination = args.dest or (config.path("raw_dir") / f"meta_{args.category}.jsonl")
+    url = metadata_url(args.category, endpoint=args.endpoint)
+    result = download_file(url, destination, force=args.force)
+    print(
+        json.dumps(
+            {
+                "category": args.category,
+                "path": str(result.path),
+                "url": result.url,
+                "size_bytes": result.size_bytes,
+                "sha256": result.sha256,
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
+def _cmd_catalog_build(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    version = args.version or f"{args.category.lower()}_v1"
+    out_root = args.out or config.path("catalog_dir")
+    result = build_catalog(
+        args.meta,
+        out_root,
+        catalog_version=version,
+        category=args.category,
+        limit=args.limit,
+    )
+    print(
+        json.dumps(
+            {
+                "catalog_dir": str(result.catalog_dir),
+                "record_count": result.record_count,
+                "manifest": result.manifest.model_dump(mode="json"),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
+    return 0
+
+
+def _make_encoder(
+    config: AppConfig, *, device: str | None = None, batch_size: int | None = None
+) -> E5Encoder:
+    e5 = config.e5
+    return E5Encoder(
+        model_id=e5.model_id,
+        revision=e5.revision,
+        device=device or e5.device,
+        batch_size=batch_size or e5.batch_size,
+        max_length=e5.max_length,
+        query_prefix=e5.query_prefix,
+        passage_prefix=e5.passage_prefix,
+        normalize=e5.normalize,
+        expected_dim=e5.embedding_dim,
+    )
+
+
+def _cmd_index_build(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    encoder = _make_encoder(config, device=args.device, batch_size=args.batch_size)
+    catalog_manifest = json.loads((args.catalog / "manifest.json").read_text(encoding="utf-8"))
+    default_version = f"{config.e5.model_id.split('/')[-1]}_{catalog_manifest['catalog_version']}"
+    bundle_dir = args.out or (config.path("faiss_dir") / (args.version or default_version))
+    manifest = build_bundle(
+        catalog_dir=args.catalog,
+        output_dir=bundle_dir,
+        encoder=encoder,
+        index_type=config.retrieval.e5.index.type,
+        normalize_vectors=config.retrieval.e5.index.normalize_vectors,
+    )
+    print(json.dumps(manifest.model_dump(mode="json"), indent=2, ensure_ascii=False))
+    return 0
+
+
+def _cmd_index_info(args: argparse.Namespace) -> int:
+    manifest = verify_bundle(args.bundle)
+    print(json.dumps(manifest.model_dump(mode="json"), indent=2, ensure_ascii=False))
+    return 0
+
+
+def _cmd_search(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    encoder = _make_encoder(config, device=args.device)
+    e5 = config.retrieval.e5
+    retriever = load_retriever(
+        args.bundle,
+        encoder,
+        top_k_per_query=args.per_query_k or e5.top_k_per_query,
+        rrf_k=e5.rrf_k,
+        max_queries=e5.max_queries,
+    )
+    output = retriever.search(args.query, top_k_per_query=args.per_query_k)
+    hits = output.fused.hits[: args.top_k]
+    catalog: dict[str, dict[str, object]] = {}
+    texts: dict[str, str] = {}
+    if args.catalog is not None:
+        catalog = {
+            product.product_id: {
+                "title": product.title,
+                "price": product.price,
+                "main_category": product.main_category,
+            }
+            for product in load_products(args.catalog / "products.jsonl")
+        }
+        if args.with_texts:
+            texts = {
+                pair.product_id: pair.rerank_text
+                for pair in load_text_pairs(args.catalog / "texts.jsonl")
+            }
+    payload = {
+        "queries": [result.query for result in output.per_query],
+        "latency_ms": round(output.fused.latency_ms, 2),
+        "fused": [
+            {
+                "rank": hit.rank,
+                "product_id": hit.product_id,
+                "similarity": round(hit.raw_score, 6) if hit.raw_score is not None else None,
+                "matched_query": hit.query,
+                **({"catalog": catalog.get(hit.product_id, {})} if catalog else {}),
+                **({"rerank_text": texts[hit.product_id]} if hit.product_id in texts else {}),
+            }
+            for hit in hits
+        ],
+        "per_query": [
+            {
+                "query": result.query,
+                "hits": [
+                    {"rank": hit.rank, "product_id": hit.product_id, "similarity": hit.raw_score}
+                    for hit in result.hits[: args.top_k]
+                ],
+            }
+            for result in output.per_query
+        ],
+    }
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    commands = {
+        ("version", None): _cmd_version,
+        ("config", "show"): _cmd_config_show,
+        ("config", "validate"): _cmd_config_validate,
+        ("catalog", "download"): _cmd_catalog_download,
+        ("catalog", "build"): _cmd_catalog_build,
+        ("index", "build"): _cmd_index_build,
+        ("index", "info"): _cmd_index_info,
+        ("search", None): _cmd_search,
+    }
+    handler = commands.get((args.command, getattr(args, f"{args.command}_command", None)))
+    if handler is None:
+        parser.error(f"unsupported command: {args.command}")
+        return 2
+    try:
+        return handler(args)
+    except Exception as exc:  # CLI boundary: concise error, no traceback of secrets
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())
