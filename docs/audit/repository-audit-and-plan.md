@@ -273,9 +273,9 @@ Controller 阈值的验证集来源。
 
 ### 6.1 范围与原则
 
-- **“第一阶段”的解释**：按根 `STARTUP_PROMPT.md` §6 的 Phase 0-7 编号组织；本轮交付
-  **Phase 0 + Phase 1**（工程骨架 + 商品目录/E5 召回基线）。Phase 2-7 为目标计划，
-  尚未执行，本文不把它们描述为已完成。
+- **“第一阶段”的解释**：决策 Q12 已确认第一阶段验收 = **Phase 0–6 完整系统**，
+  Phase 7 单独评测。本轮已交付 Phase 0 + Phase 1；Phase 2–6 待执行，本文不把它们
+  描述为已完成。若 TIGER 真实路线无法完成，不得把 E5 单路系统标记为完成双路验收。
 - 总预算约 120 人时；优先级：真实端到端最小链路 > 高级实验。
 - 所有 Mock 显式标记且不得进入正式实验；未运行的测试不得声称通过。
 
@@ -347,12 +347,13 @@ Phase 2 不依赖 TIGER 也可先做（TIGER 结果用契约校验的占位路�
 
 ---
 
-## 7. 待负责人决策事项
+## 7. 已确认决策（2026-11-24）
 
-12 项待定事项已集中整理到 [open-questions.md](../decisions/open-questions.md)（只列事实、
-可选方案与影响，不含推荐意见）。本文不再重复其内容，摘要如下：
+Q1–Q12 已由项目负责人确认，完整记录与风险清单见
+[FINAL_DECISIONS_AND_RISK_REGISTER.md](../decisions/FINAL_DECISIONS_AND_RISK_REGISTER.md)。
+`open-questions.md` 保留为提问的历史记录。摘要：
 
-| ID | 待决问题 | 影响阶段 |
+| ID | 已确认决策 | 影响阶段 |
 |---|---|---|
 | Q1 | TIGER 实现路线（自建 / 外部 / 暂缓） | Phase 4、双路召回 |
 | Q2 | Reranker 加载方式与运行设备 | Phase 3 |

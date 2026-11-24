@@ -10,6 +10,11 @@
 paths:
   raw_dir: /mnt/agr-data/data/raw
   interim_dir: /mnt/agr-data/data/interim
+  processed_dir: /mnt/agr-data/data/processed
 
 e5:
   device: cpu
+
+memory:
+  sqlite:
+    path: /mnt/agr-data/data/processed/interaction_history.db

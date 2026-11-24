@@ -426,3 +426,25 @@ Agentic 推荐闭环可运行。 4. Phase 7：用可复现数据验证各模块�
 5.  在 Gate 1 有结论之前，不投入大量时间自建 TIGER。
 
 **最终原则：架构决策已经确定；接下来通过可复现的工程验证降低风险。任何未经验证的能力都必须标记为待验证，不得写成已完成。**
+
+---
+
+## 8. 风险状态（执行记录）
+
+按 §6 第 5 条维护；详细证据与逐条更新见
+[`docs/audit/risk-status.md`](../audit/risk-status.md)。截至 2026-11-24（Gate 1）：
+
+| 风险 | 状态 | 关键证据 |
+|---|---|---|
+| R1 | In Progress | 无 TIGER 端到端权重；6 个候选实现需改造（`docs/audit/tiger-compatibility-report.md`） |
+| R2 | In Progress | 8,201 条 ≥3 用户序列；4×1024 Semantic ID 冲突 14.3%；训练资源为估算（`docs/audit/tiger-feasibility-assessment.md`） |
+| R3 | Mitigated | 694,252 事件 / 631,986 用户 / 112,565 商品；0 跳过；SQLite 已构建 |
+| R4 | Closed（有边界） | yes=9693/no=2152、官方模板三方一致；分数饱和不可当概率 |
+| R5 | Mitigated | 512 token 单条 P50 0.41 s；20 候选 ≈ 6 s/query；峰值 RSS 3.9–5.2 GB |
+| R6 | Mitigated | 约束三态 + 无约束为空状态；单测覆盖四种情形 |
+| R14 | Closed | 独立 Git 仓库；凭据未入库；父仓库未改动 |
+| R15 | Mitigated | 单一 STARTUP_PROMPT V1.2，旧版归档 |
+| R8/R12/R13/R17 | In Progress | 字段覆盖统计、事件表、NFS、DeepSeek 模型列表已验证 |
+| 其余（R7/R9/R10/R11/R16/R18/R19/R20） | Open | 见 `risk-status.md` |
+
+Q1 状态说明：Q1-B 的“外部权重”已被核查证伪；按 Q1 规则需负责人确认解释并批准后才可进入自建（A）。

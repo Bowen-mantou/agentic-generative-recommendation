@@ -53,8 +53,9 @@ agr search --bundle artifacts/faiss/e5-base-v2_all_beauty_v2 \
 
 ## S4000 部署
 
-代码与产物在 `/home/agr/Agentic-Generative-Recommendation`；raw 数据在 12 TB NFS
-`/mnt/agr-data/data/raw`；venv 在 `/tmp/agr/venv`（home 只剩约 3.7 GB）。
+代码在独立 Git 仓库 `/home/agr/Agentic-Generative-Recommendation`；原始数据、HF Cache、
+catalog/FAISS 产物与大型日志在 12 TB NFS `/mnt/agr-data`（Q10）；venv 在
+`/tmp/agr/venv`（重启后按 `scripts/bootstrap_s4000.sh` 重建）。
 
 ```bash
 # 本机（Windows）

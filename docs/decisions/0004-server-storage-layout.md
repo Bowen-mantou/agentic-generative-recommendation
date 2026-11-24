@@ -16,14 +16,16 @@
 | uv 缓存 | `/tmp/agr/uv-cache` | 首次安装曾占满 `/home` 6 GB（已清理并重定向） |
 | 原始数据（metadata/reviews） | `/mnt/agr-data/data/raw` | 12 TB 持久 NFS |
 | HF 模型缓存 | `/mnt/agr-data/hf`（`HF_HOME`） | 避免 440 MB+ 权重写入 `/home` |
-| catalog / FAISS / embeddings | 项目内 `artifacts/` | 约 1.2 GB，便于随代码检查；manifest 可追溯 |
-| 运行 trace | 项目内 `runs/` | JSONL 小文件，按 request_id 分目录 |
+| catalog / FAISS / embeddings / TIGER 权重 | `/mnt/agr-data/artifacts`（NFS） | Q10：大型产物不入 Git、不占 `/home` |
+| 运行 trace / 大型日志 | `/mnt/agr-data/runs`（NFS） | Q10：大型日志放 NFS |
 
 约定：`scripts/env_s4000.sh` 统一导出 `HF_ENDPOINT=https://hf-mirror.com`、`HF_HOME`，
-并激活 venv；`configs/local.yaml`（gitignored）把 `paths.raw_dir` / `paths.interim_dir`
-指向 NFS。
+并激活 venv；`configs/local.yaml`（gitignored）把 `paths.*` 指向 NFS（`data/`、`artifacts/`、`runs/`）。
+2026-11-24 决策 Q10 复核后，产物从 `/home` 迁移到 NFS；代码与文档进入独立 Git 仓库（Q8）。
 
 ## 后果与风险
+
+- 产物在 NFS：`/home` 释放约 851 MB；NFS 的备份/持久性仍未确认（风险 R13）。
 
 - `/tmp` 是易失的：重启后必须重跑 `scripts/bootstrap_s4000.sh`；数据与产物在
   持久卷上，不受影响。

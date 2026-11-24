@@ -17,9 +17,14 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from recommender import __version__
-from recommender.catalog.amazon import download_file, metadata_url
+from recommender.catalog.amazon import download_file, metadata_url, reviews_url
 from recommender.catalog.build import build_catalog, load_products, load_text_pairs
 from recommender.config import AppConfig, Settings, load_settings
+from recommender.interaction_history import (
+    InteractionStore,
+    build_interaction_history,
+    sequence_length_summary,
+)
 from recommender.observability.logging import configure_logging, get_logger
 from recommender.retrieval.e5.artifacts import build_bundle, load_retriever, verify_bundle
 from recommender.retrieval.e5.encoder import E5Encoder
@@ -53,6 +58,24 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--version", default=None)
     build.add_argument("--limit", type=int, default=None)
     build.add_argument("--out", type=Path, default=None)
+
+    history_parser = subparsers.add_parser(
+        "history", help="InteractionHistory SQLite store (reviews -> events)"
+    )
+    history_sub = history_parser.add_subparsers(dest="history_command", required=True)
+    history_download = history_sub.add_parser("download", help="download raw review file")
+    history_download.add_argument("--category", required=True)
+    history_download.add_argument("--dest", type=Path, default=None)
+    history_download.add_argument("--force", action="store_true")
+    history_build = history_sub.add_parser("build", help="build InteractionEvent rows")
+    history_build.add_argument("--reviews", type=Path, required=True)
+    history_build.add_argument("--db", type=Path, default=None)
+    history_build.add_argument("--catalog", type=Path, default=None)
+    history_build.add_argument("--limit", type=int, default=None)
+    history_stats = history_sub.add_parser("stats", help="event and sequence statistics")
+    history_stats.add_argument("--db", type=Path, default=None)
+    history_stats.add_argument("--min-events", type=int, default=3)
+    history_stats.add_argument("--cutoff-ts", type=int, default=None)
 
     index_parser = subparsers.add_parser("index", help="E5 + FAISS index bundles")
     index_sub = index_parser.add_subparsers(dest="index_command", required=True)
@@ -183,6 +206,76 @@ def _make_encoder(
     )
 
 
+def _history_db_path(config: AppConfig, override: Path | None) -> Path:
+    return override or config.resolve(config.memory.sqlite.path)
+
+
+def _cmd_history_download(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    category = args.category
+    destination = args.dest or (config.path("raw_dir") / f"review_{category}.jsonl")
+    result = download_file(reviews_url(category), destination, force=args.force)
+    print(
+        json.dumps(
+            {
+                "category": category,
+                "path": str(result.path),
+                "url": result.url,
+                "size_bytes": result.size_bytes,
+                "sha256": result.sha256,
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
+def _cmd_history_build(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    db_path = _history_db_path(config, args.db)
+    catalog_path = args.catalog
+    if catalog_path is None:
+        default_catalog = config.path("catalog_dir") / "all_beauty_v2"
+        catalog_path = default_catalog if default_catalog.is_dir() else None
+    products_path = (catalog_path / "products.jsonl") if catalog_path else None
+    stats = build_interaction_history(
+        args.reviews,
+        db_path,
+        catalog_products_path=products_path,
+        limit=args.limit,
+    )
+    print(json.dumps({"db_path": str(db_path), "stats": stats.as_dict()}, indent=2, default=str))
+    return 0
+
+
+def _cmd_history_stats(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    db_path = _history_db_path(config, args.db)
+    with InteractionStore(db_path) as store:
+        base = store.stats(cutoff_ts=args.cutoff_ts)
+        lengths = [
+            len(events)
+            for _, events in store.iter_user_sequences(
+                min_events=args.min_events, cutoff_ts=args.cutoff_ts
+            )
+        ]
+    payload = {
+        "db_path": str(db_path),
+        "event_stats": base,
+        "min_events": args.min_events,
+        "cutoff_ts": args.cutoff_ts,
+        "sequence_summary": sequence_length_summary(lengths),
+    }
+    print(json.dumps(payload, indent=2, default=str))
+    return 0
+
+
 def _cmd_index_build(args: argparse.Namespace) -> int:
     settings = _settings(args)
     config = settings.config
@@ -277,6 +370,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("config", "validate"): _cmd_config_validate,
         ("catalog", "download"): _cmd_catalog_download,
         ("catalog", "build"): _cmd_catalog_build,
+        ("history", "download"): _cmd_history_download,
+        ("history", "build"): _cmd_history_build,
+        ("history", "stats"): _cmd_history_stats,
         ("index", "build"): _cmd_index_build,
         ("index", "info"): _cmd_index_info,
         ("search", None): _cmd_search,
