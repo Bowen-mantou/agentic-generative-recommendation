@@ -18,7 +18,8 @@ successful judgment.
 from __future__ import annotations
 
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import ValidationError
@@ -29,6 +30,11 @@ from recommender.api.deepseek import (
     DeepSeekJSONError,
     parse_json_content,
 )
+from recommender.judgment.evidence import (
+    CatalogLookup,
+    EvidenceBuildResult,
+    JudgmentEvidenceBuilder,
+)
 from recommender.judgment.prompts import (
     JUDGMENT_PROMPT_VERSION,
     build_judgment_messages,
@@ -37,7 +43,7 @@ from recommender.judgment.prompts import (
 from recommender.observability.context import get_request_context
 from recommender.observability.logging import get_logger
 from recommender.observability.trace import TraceWriter
-from recommender.schemas.common import EvidenceStatus
+from recommender.schemas.common import ConstraintStatus, EvidenceStatus
 from recommender.schemas.judgment import (
     JudgmentBatch,
     JudgmentCandidate,
@@ -45,6 +51,7 @@ from recommender.schemas.judgment import (
     JudgmentRecord,
 )
 from recommender.schemas.plan import RecommendationPlan
+from recommender.schemas.product import ProductRecord
 from recommender.utils.errors import ContractError, RecommenderError
 
 _LOGGER = get_logger(__name__)
@@ -118,6 +125,18 @@ class _AlignmentError(ValueError):
         super().__init__("; ".join(parts) or "judgment product alignment failed")
         self.missing = missing
         self.extra = extra
+
+
+@dataclass(frozen=True)
+class RankedJudgment:
+    """One ``judge_ranked`` call: the evidence used and the resulting judgments."""
+
+    evidence: EvidenceBuildResult
+    batch: JudgmentBatch
+
+    @property
+    def product_ids(self) -> list[str]:
+        return [record.result.product_id for record in self.batch.records]
 
 
 def _normalize_source(value: str) -> str:
@@ -222,6 +241,62 @@ class Judge:
         if product_count <= 0:
             return 0
         return (product_count + self._batch_size - 1) // self._batch_size
+
+    def judge_ranked(
+        self,
+        *,
+        request_id: str,
+        user_request: str,
+        plan: RecommendationPlan,
+        ranked_product_ids: Sequence[str],
+        catalog: Mapping[str, ProductRecord] | None = None,
+        catalog_lookup: CatalogLookup | None = None,
+        constraint_status_by_id: Mapping[str, ConstraintStatus | None] | None = None,
+        evidence_builder: JudgmentEvidenceBuilder | None = None,
+    ) -> RankedJudgment:
+        """D6 convenience path: enrich Top-N ids from the Catalog, then judge them.
+
+        This is additive: callers that already own a :class:`JudgmentCandidate` view
+        keep using :meth:`judge`, whose behaviour is unchanged. Here the ranked
+        ``product_id`` list is translated into candidates by
+        :class:`JudgmentEvidenceBuilder` (truncated description, relevance-filtered
+        details, read-only constraint status) before the same batch contract applies.
+        """
+        builder = evidence_builder or JudgmentEvidenceBuilder()
+        evidence = builder.build(
+            ranked_product_ids,
+            plan=plan,
+            catalog=catalog,
+            catalog_lookup=catalog_lookup,
+            constraint_status_by_id=constraint_status_by_id,
+        )
+        if not evidence.candidates:
+            missing = ", ".join(evidence.stats.missing_products[:10])
+            raise ContractError(
+                "no catalog record found for the ranked products"
+                + (f": {missing}" if missing else "")
+            )
+        if evidence.stats.missing_products:
+            _LOGGER.warning(
+                "judgment evidence missing catalog products",
+                extra={
+                    "request_id": request_id,
+                    "missing_products": evidence.stats.missing_products,
+                },
+            )
+        if self._trace is not None:
+            self._trace.emit(
+                "judgment.evidence_built",
+                {"request_id": request_id, **evidence.stats.to_dict()},
+                stage="judgment",
+            )
+        batch = self.judge(
+            request_id=request_id,
+            user_request=user_request,
+            plan=plan,
+            candidates=evidence.candidates,
+        )
+        return RankedJudgment(evidence=evidence, batch=batch)
 
     def judge(
         self,

@@ -206,6 +206,65 @@ Judge(client, *, model=None, prompt_version="judgment.v1", batch_size=10,
 `RETRIEVAL_DEGRADED`/`NO_VALID_CANDIDATES`，`quality_satisfied=false`），不会把失败判断当作
 `unknown`/`pass` 继续使用。
 
+### 4.4 D6 Evidence Builder（Catalog 按需补证据，`judgment/evidence.py`）
+
+决策 D6=B：候选池契约保持 `product_id/title/price/main_category/brand` 不变；Reranker 排序后，
+只对进入 Judgment 的 Top-N `product_id` 批量查询 Catalog，补充**截断后的 description** 与
+**和当前需求相关的 details**。新增 `JudgmentEvidenceBuilder`（默认
+`description_max_chars=800`、`max_detail_keys=8`、`max_total_chars=24000`、
+`max_total_tokens=None`；设置 token 上限时按 `chars_per_token=4` 折算，取更严格的字符预算）。
+
+```python
+JudgmentEvidenceBuilder(
+    catalog=None,            # Mapping[str, ProductRecord]（已加载）与 catalog_lookup 二选一
+    catalog_lookup=None,     # Callable[[Sequence[str]], Mapping[str, ProductRecord]]
+    description_max_chars=800, max_detail_keys=8, max_total_chars=24000,
+    max_total_tokens=None, chars_per_token=4,
+)
+  .build(product_ids, *, plan, catalog=None, catalog_lookup=None,
+         constraint_status_by_id=None, extra_terms=()) -> EvidenceBuildResult
+```
+
+`EvidenceBuildResult` = `candidates: list[JudgmentCandidate]`（严格按 Reranker 顺序）+ `stats:
+EvidenceStats`。`catalog` 与 `catalog_lookup` 互斥；查询函数每次 build 只调用一次，入参为去重后
+的 Top-N id（保持顺序）。规则：
+
+- **不推断**：只有真实存在的 Catalog 记录才构造 candidate；缺失商品记入 `missing_products`
+  并跳过，不生成空 candidate，也不推断价格/规格/功效。
+- **description**：超过 `description_max_chars` 时截断并以 `…` 标记，记入 `truncated_fields`；
+  空/空白 description 保持 `None`。
+- **details**：由 Plan 的硬约束字段、软偏好、`preferences.{priority,current,historical,negative}`、
+  `ranking.priority_attributes` 与 intent 生成大小写/分隔符不敏感的 token 相关性打分（key 命中
+  权重高于 value 命中），只保留得分 > 0 的键，最多 `max_detail_keys` 个，稳定排序（得分降序、
+  键名升序）。无相关性信号的 details 一律不进入 payload（记为 `irrelevant`），不整包倾倒。
+- **基础字段**：`title`、`price` 原样保留；`brand`/`main_category` 放入 `attributes`，缺失保持
+  缺失；`features` 不进入 Judgment 视图（避免扩大 D6 范围）。
+- **constraint_status**：只从 `constraint_status_by_id` 复制（可为 `None`），本模块不比较价格/
+  品类，不把 `unknown`/`None` 升级为 `pass`（Q3）。
+- **预算**：总字符预算 = `min(max_total_chars, max_total_tokens × chars_per_token)`；超限时按
+  “核心身份字段 > 相关性筛选后的 details > description” 顺序丢弃可选文本，并逐项记录
+  `dropped_fields` / `dropped_details`。核心字段（product_id/title/price/brand/main_category）
+  永不丢弃，避免破坏“每商品恰好一条 Judgment”的对齐；若核心字段本身超预算，
+  `estimated_chars` 会如实超过 `char_limit` 且 `budget_exhausted=true`，而不是静默减少候选。
+- **统计**：`missing_products`、`duplicate_products`、`truncated_fields`、`dropped_fields`、
+  `dropped_details`（含 reason）、`estimated_chars/tokens`、`char_limit/token_limit`、
+  `budget_exhausted`。
+
+Judge 集成（**增量 API，不改现有 `judge()`**）：
+
+```python
+Judge.judge_ranked(*, request_id, user_request, plan, ranked_product_ids,
+                   catalog=None, catalog_lookup=None,
+                   constraint_status_by_id=None, evidence_builder=None) -> RankedJudgment
+```
+
+`RankedJudgment` = `{evidence: EvidenceBuildResult, batch: JudgmentBatch}`；内部先
+`builder.build` 再走原有 `judge()`，因此“一个商品一条独立结果”、缺失/额外结果校验、证据来源
+校验全部沿用。Catalog 全部缺失时抛 `ContractError` 且不调用 API；部分缺失时 warning + trace
+`judgment.evidence_built` 记录统计。现有 `RecommendationWorkflow` 仍使用
+`candidates_from_pool` 注入点（本任务未改 `controller/`），Lead 集成时可把该注入点替换为
+builder 或直接调用 `judge_ranked`。
+
 ---
 
 ## 5. Adaptive Controller（纯 Python）
@@ -329,6 +388,33 @@ initial_plan -> clarification_gate --(required)--> CLARIFY（挂起返回）
 | `tests/unit/test_phase5_controller.py` | 25 | 质量汇总、quality STOP、**无 Judgment 不得 quality STOP**、REPLAN、预算耗尽强制 STOP（quality false）、最后一轮质量不被误标预算、max rounds、无有效候选、API 失败降级、CLARIFY、重复 query 规范化、State decision 往返、工作流 quality STOP/REPLAN 循环/重复 query 停止/Planner 失败/Replanner 失败/Judgment 失败/预算不足/选取过滤/检索失败/**Rerank 空结果降级** |
 
 全部 68 个测试使用 `httpx.MockTransport` 与 fake sleeper，**默认不访问真实 API**，无网络依赖。
+
+### 8.1 D6 Evidence Builder 测试证据（2026-11-24）
+
+`tests/unit/test_judgment_evidence.py`：**22 个单测全部通过**（`httpx.MockTransport`，无真实
+API）。覆盖：
+
+| 覆盖点 | 用例 |
+|---|---|
+| description 截断/保留/空值 | 超长截断并带 `…` 且记入 `truncated_fields`；短文本原样；空白 description 保持 `None` |
+| details 相关性筛选 | 大小写不敏感 key 命中；value 命中；无信号时不倾倒 details；无关 details 记为 `irrelevant` |
+| details 数量上限 | `max_detail_keys` 生效，超出记为 `max_detail_keys` |
+| 基础字段 | title/price/brand/main_category 保留 |
+| 缺失商品 | 记入 `missing_products`、跳过且不伪造；lookup 返回错 id 也按缺失处理 |
+| 对齐 | 输出顺序 = Reranker 顺序；重复 id 去重并记录 |
+| Catalog 查询 | `catalog_lookup` 每 build 只调用一次且入参保持顺序；无 catalog 源/空 id 抛 `ContractError` |
+| constraint_status | 上游传入 `unknown` 原样保留；未传入为 `None`，不因价格便宜自动 `pass`（Q3） |
+| 字符预算 | 超限截断 description，核心字段不丢，`estimated_chars <= char_limit` |
+| 核心字段超预算 | 保留全部 product_id 对齐并置 `budget_exhausted=true`、记录 dropped 字段 |
+| Token 预算 | `max_total_tokens=40, chars_per_token=4` → 有效字符预算 160 |
+| Judge 集成 | `judge_ranked` 走 builder + stub DeepSeek：乱序结果按输入对齐、详情过滤进入 prompt、缺失商品不送审、全缺失不调用 API |
+
+命令与结果：
+
+```bash
+python -m pytest tests/unit/test_judgment_evidence.py -q   # 22 passed
+python -m pytest tests/unit/test_phase5_judgment.py -q     # 17 passed（既有 Judge 行为未变）
+```
 
 运行命令：
 
