@@ -159,6 +159,11 @@ class RecommendationState(ContractModel):
     stop_reason: StopReason | None = None
     quality_satisfied: bool = False
     budget_exhausted: bool = False
+    # Full Controller decision including reasons. The final-stage doc §4.5 state sketch
+    # only lists action/stop_reason/quality_satisfied/budget_exhausted, which loses the
+    # audit trail; keeping the validated decision object here makes the trace complete
+    # without inventing parallel scalar fields.
+    decision: ControllerDecision | None = None
     budget_state: BudgetState = BudgetState()
     current_round: int = Field(default=0, ge=0)
     max_replan_rounds: int = Field(default=2, ge=0)

@@ -22,14 +22,20 @@ from recommender.schemas.common import (
 
 
 class JudgmentCandidate(ContractModel):
-    """Product view handed to Judgment: catalog facts plus the upstream constraint state."""
+    """Product view handed to Judgment: catalog facts plus the upstream constraint state.
+
+    ``constraint_status`` is read-only context produced by the single Python Constraint
+    Evaluator. ``None`` keeps decision Q3 intact: "no hard constraint configured" is not
+    the same as ``pass``, and Judgment must never upgrade ``unknown``/``None`` to a
+    satisfied hard constraint.
+    """
 
     product_id: NonEmptyStr
     title: str = ""
     price: float | None = Field(default=None, ge=0.0, allow_inf_nan=False)
     description: str | None = None
     attributes: dict[str, str] = Field(default_factory=dict)
-    constraint_status: ConstraintStatus
+    constraint_status: ConstraintStatus | None = None
 
 
 class PreferenceFit(ContractModel):
@@ -86,6 +92,9 @@ class JudgmentRecord(ContractModel):
     latency_ms: float | None = Field(default=None, ge=0.0)
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
+    # Number of chat attempts that produced this batch (includes a bounded
+    # reasoning-truncation compatibility retry); useful for cost/retry auditing.
+    attempts: int = Field(default=1, ge=1)
     is_synthetic: bool = False
 
 

@@ -1,0 +1,156 @@
+{
+  "timestamp_utc": "2026-11-24T03:32:42.872404+00:00",
+  "note": "真实 DeepSeek API 调用（非 Mock）。Judgment 使用 smoke_p1/smoke_p2 两个示例商品（非真实目录数据，仅用于验证结构化输出对齐）。",
+  "client": {
+    "provider": "deepseek",
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-flash",
+    "timeout_s": 60.0,
+    "max_retries": 2,
+    "max_concurrency": 4,
+    "json_mode": true
+  },
+  "config": {
+    "planner_model": "deepseek-flash",
+    "judgment_model": "deepseek-flash",
+    "temperature": 0.2,
+    "planner_max_tokens": 2048,
+    "timeout_s": 60.0,
+    "max_retries": 2,
+    "max_concurrency": 4,
+    "user_request": "I want a lightweight daily face moisturizer under $30, preferably fragrance-free."
+  },
+  "planner": {
+    "status": "success",
+    "model": "deepseek-flash",
+    "prompt_version": "planner.initial.v1",
+    "attempts": 1,
+    "repaired": false,
+    "latency_ms": 1610.5,
+    "input_tokens": 1309,
+    "output_tokens": 375,
+    "request_id": "req_e1e7ba711b5b4cd6a556ab6a0a205eab",
+    "trace_id": "tr_f4011437100049a0826284e78f6bb80c",
+    "identity_overrides": [],
+    "plan": {
+      "plan_id": "plan_7c46be443af7",
+      "parent_plan_id": null,
+      "plan_version": 1,
+      "mode": "initial",
+      "intent": {
+        "intent": "product_recommendation",
+        "category": "beauty",
+        "product_type": "face moisturizer",
+        "usage_scenario": "daily skincare"
+      },
+      "hard_constraints": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "value": 30,
+          "unit": "USD",
+          "source": "current_request"
+        }
+      ],
+      "soft_preferences": [
+        {
+          "attribute": "lightweight",
+          "source": "current_request",
+          "priority": "high"
+        },
+        {
+          "attribute": "fragrance_free",
+          "source": "current_request",
+          "priority": "high"
+        },
+        {
+          "attribute": "fragrance_free",
+          "source": "user_memory",
+          "priority": "medium"
+        },
+        {
+          "attribute": "lightweight",
+          "source": "user_memory",
+          "priority": "medium"
+        }
+      ],
+      "preferences": {
+        "current": [
+          "lightweight",
+          "fragrance-free",
+          "daily use",
+          "under $30"
+        ],
+        "historical": [
+          "fragrance_free",
+          "lightweight"
+        ],
+        "negative": [
+          "strong_fragrance"
+        ],
+        "priority": [
+          "fragrance_free",
+          "lightweight",
+          "price"
+        ]
+      },
+      "retrieval": {
+        "strategy": "hybrid_balanced",
+        "tiger": {
+          "enabled": false,
+          "candidate_budget": "standard"
+        },
+        "e5_faiss": {
+          "enabled": true,
+          "queries": [
+            "lightweight daily face moisturizer fragrance-free",
+            "fragrance-free facial moisturizer for everyday use",
+            "lightweight non-greasy daily facial cream"
+          ],
+          "candidate_budget": "standard"
+        }
+      },
+      "ranking": {
+        "rerank_query": "lightweight fragrance-free daily face moisturizer under $30",
+        "priority_attributes": [
+          "fragrance_free",
+          "lightweight",
+          "price",
+          "rating"
+        ]
+      },
+      "clarification": {
+        "required": false,
+        "question": null,
+        "reason": null
+      },
+      "assumptions": [],
+      "change_summary": []
+    }
+  },
+  "judgment": {
+    "status": "failed",
+    "elapsed_ms": 11315.7,
+    "error_type": "JudgmentBatchError",
+    "error": {
+      "error_code": "judgment_batch_failed",
+      "error_type": "JudgmentBatchError",
+      "message": "DeepSeek API failed while judging batch 1: DeepSeek response has no textual message content",
+      "degraded": true,
+      "judgment_available": false,
+      "batch_index": 1,
+      "product_ids": [
+        "smoke_p1",
+        "smoke_p2"
+      ],
+      "missing_products": [],
+      "extra_products": [],
+      "attempts": 1,
+      "error_kind": "response",
+      "last_error": "DeepSeek response has no textual message content",
+      "model": "deepseek-flash",
+      "request_id": "req_8b2a40849f19429ca277513accc3c429",
+      "trace_id": "tr_73c417ec1e194036b25ca5dc69454f68"
+    }
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "timestamp_utc": "2026-11-24T03:37:49.220896+00:00",
+  "note": "真实 DeepSeek API 调用（非 Mock）。Judgment 使用 smoke_p1/smoke_p2 两个示例商品（非真实目录数据，仅用于验证结构化输出对齐）。",
+  "client": {
+    "provider": "deepseek",
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-flash",
+    "timeout_s": 60.0,
+    "max_retries": 2,
+    "max_concurrency": 4,
+    "json_mode": true,
+    "reasoning_effort": null,
+    "reasoning_fallback": true
+  },
+  "config": {
+    "planner_model": "deepseek-flash",
+    "judgment_model": "deepseek-flash",
+    "temperature": 0.2,
+    "planner_max_tokens": 2048,
+    "timeout_s": 60.0,
+    "max_retries": 2,
+    "max_concurrency": 4,
+    "user_request": "I want a lightweight daily face moisturizer under $30, preferably fragrance-free."
+  },
+  "planner": {
+    "status": "success",
+    "model": "deepseek-flash",
+    "prompt_version": "planner.initial.v1",
+    "attempts": 1,
+    "repaired": false,
+    "latency_ms": 2735.9,
+    "input_tokens": 1308,
+    "output_tokens": 672,
+    "request_id": "req_0d496595d24e476a9a6d36b967082dc8",
+    "trace_id": "tr_7b50259b8a1e4f2c824716b86fbf5922",
+    "identity_overrides": [],
+    "plan": {
+      "plan_id": "plan_37af76ddc142",
+      "parent_plan_id": null,
+      "plan_version": 1,
+      "mode": "initial",
+      "intent": {
+        "intent": "product_recommendation",
+        "category": "beauty",
+        "product_type": "face moisturizer",
+        "usage_scenario": "daily skincare routine"
+      },
+      "hard_constraints": [
+        {
+          "field": "price",
+          "operator": "lte",
+          "value": 30,
+          "unit": "USD",
+          "source": "current_request"
+        }
+      ],
+      "soft_preferences": [
+        {
+          "attribute": "lightweight",
+          "source": "current_request",
+          "priority": "high"
+        },
+        {
+          "attribute": "fragrance_free",
+          "source": "current_request",
+          "priority": "high"
+        },
+        {
+          "attribute": "fragrance_free",
+          "source": "user_memory",
+          "priority": "high"
+        },
+        {
+          "attribute": "lightweight",
+          "source": "user_memory",
+          "priority": "medium"
+        }
+      ],
+      "preferences": {
+        "current": [
+          "lightweight",
+          "fragrance_free",
+          "daily use face moisturizer"
+        ],
+        "historical": [
+          "fragrance_free",
+          "lightweight"
+        ],
+        "negative": [
+          "strong_fragrance"
+        ],
+        "priority": [
+          "fragrance_free",
+          "lightweight",
+          "price"
+        ]
+      },
+      "retrieval": {
+        "strategy": "semantic_priority",
+        "tiger": {
+          "enabled": false,
+          "candidate_budget": "standard"
+        },
+        "e5_faiss": {
+          "enabled": true,
+          "queries": [
+            "lightweight daily face moisturizer fragrance free under $30",
+            "fragrance-free lightweight facial moisturizer for everyday use",
+            "gentle unscented daily moisturizer face cream affordable"
+          ],
+          "candidate_budget": "standard"
+        }
+      },
+      "ranking": {
+        "rerank_query": "lightweight fragrance-free daily face moisturizer under $30 with good ratings",
+        "priority_attributes": [
+          "price",
+          "average_rating",
+          "rating_number",
+          "brand"
+        ]
+      },
+      "clarification": {
+        "required": false,
+        "question": null,
+        "reason": null
+      },
+      "assumptions": [],
+      "change_summary": []
+    }
+  },
+  "judgment": {
+    "status": "success",
+    "model": "deepseek-flash",
+    "prompt_version": "judgment.v1",
+    "batch_size": 2,
+    "records": [
+      {
+        "product_id": "smoke_p1",
+        "attempts": 2,
+        "latency_ms": 1074.4416999514215,
+        "input_tokens": 1476,
+        "output_tokens": 230,
+        "result": {
+          "product_id": "smoke_p1",
+          "preference_fit": {
+            "level": "high",
+            "matched_preferences": [
+              "lightweight",
+              "fragrance_free",
+              "daily use face moisturizer"
+            ],
+            "unmatched_preferences": [],
+            "unknown_preferences": []
+          },
+          "attribute_evidence": {
+            "lightweight": {
+              "status": "supported",
+              "source": "description"
+            },
+            "fragrance_free": {
+              "status": "supported",
+              "source": "attributes.Scent"
+            }
+          },
+          "match_assessment": "direct_match",
+          "uncertainty": "low",
+          "warnings": []
+        }
+      },
+      {
+        "product_id": "smoke_p2",
+        "attempts": 2,
+        "latency_ms": 1074.4416999514215,
+        "input_tokens": 1476,
+        "output_tokens": 230,
+        "result": {
+          "product_id": "smoke_p2",
+          "preference_fit": {
+            "level": "low",
+            "matched_preferences": [],
+            "unmatched_preferences": [
+              "lightweight",
+              "fragrance_free",
+              "daily use face moisturizer"
+            ],
+            "unknown_preferences": []
+          },
+          "attribute_evidence": {
+            "lightweight": {
+              "status": "contradicted",
+              "source": "description"
+            },
+            "fragrance_free": {
+              "status": "contradicted",
+              "source": "attributes.Scent"
+            }
+          },
+          "match_assessment": "no_match",
+          "uncertainty": "low",
+          "warnings": [
+            "商品为厚重晚霜且含浓花香，不符合轻盈、无香偏好"
+          ]
+        }
+      }
+    ]
+  }
+}
