@@ -29,6 +29,7 @@ Qwen3-Reranker-0.6B 精排 → DeepSeek Judgment 逐商品判断 → Adaptive Co
 
 需要负责人决定的事项（仅事实与选项，不含推荐意见）：
 - 当前待决（D1–D11）：[docs/decisions/OPEN_DECISIONS_PHASE4-7.md](docs/decisions/OPEN_DECISIONS_PHASE4-7.md)
+- 当前问题与需负责人执行的操作：[docs/audit/current-issues-and-owner-actions.md](docs/audit/current-issues-and-owner-actions.md)
 - 历史提问记录：[docs/decisions/open-questions.md](docs/decisions/open-questions.md)
 
 ## 快速开始
