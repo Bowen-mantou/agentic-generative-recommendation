@@ -463,7 +463,7 @@ Agentic 推荐闭环可运行。 4. Phase 7：用可复现数据验证各模块�
 | D7 | 完成：planner fallback 默认关闭；显式开启生成 degraded balanced 计划 |
 | D8 | 完成：`min_judgments=3`；2 条不达标、3 条达标测试通过 |
 | D9 | Qdrant 容器运行 + `multilingual-e5-base` 验证（中文 P50 16.2 ms）；`Memory.add` 端到端待 Phase 6 |
-| D10 | 协议与模板完成（`docs/phase7/EVALUATION_PROTOCOL_D10.md`）；人工标注**尚未进行** |
+| D10 | 协议已工程实现：2,685 条时间审计 100% 通过；100 条 Pilot 生成 97 Query、82 PASS/14 REVIEW/1 FAIL/3 ERROR、0 泄漏；**20 条人工复核待做**，未冻结（[Pilot](../phase7/PILOT_REPORT_V0.1.md)） |
 | D11 | 执行完毕：条件一/二均不通过；偏差说明见 [Phase 4 报告](../phase4/D1_B1_B2_GATE_REPORT.md) |
 
 ## 8. 风险状态（执行记录）

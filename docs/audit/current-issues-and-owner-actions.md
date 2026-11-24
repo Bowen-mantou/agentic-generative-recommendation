@@ -14,7 +14,7 @@
 | Phase 4（TIGER） | **D11 Gate = No-Go**；A1/B1/B2 均未超过热度基线，Hybrid 均低于 E5-only；**未全量训练**，Phase 4 不标记完成 |
 | Phase 5（Planner/Judgment/Controller） | 代码、D3–D8 硬化、LangGraph 图级运行、260 单测完成；**真实 E2E（DeepSeek+E5+Reranker+Judgment）未接线** |
 | Phase 6（Generator/Memory） | 只有 D9 基础设施（Qdrant 容器 + multilingual-e5-base 验证）与占位目录；**Generator、Mem0 Adapter 未实现**，`Memory.add` 未验证 |
-| Phase 7（评测） | D10 协议/模板完成；**人工 Query 标注 0 条**，评测未开始 |
+| Phase 7（评测） | 协议已实现；2,685 条时间审计完成；100 条 Pilot（82 PASS/14 REVIEW/1 FAIL/3 ERROR，0 泄漏）；**20 条人工复核待做**，未冻结 |
 | 测试 | 本地 260 passed / 14 skipped；服务器 271 passed / 3 skipped（LangGraph 真实运行） |
 | 服务器服务 | `agr-qdrant` 容器运行中（v1.20.2，127.0.0.1:6333，空库，Up 4h） |
 
@@ -47,11 +47,13 @@
   Phase 6 的 Generator/Memory 也无法接入完整链路。
 - **需要负责人**：O4（真实 API 使用与预算上限）。
 
-#### P0-3 D10 人工 Query 集尚未标注
+#### P0-3 D10 人工 Query 集尚未标注（Pilot 已构建，待人工复核）
 
-- **事实**：`data/samples/eval/manual_queries_template.csv` 只有表头（0 条数据）；
-  D10 要求 100–300 条人工 Query、相关性等级与标注依据；协议见
-  [EVALUATION_PROTOCOL_D10.md](../phase7/EVALUATION_PROTOCOL_D10.md)。
+- **事实**：D10 协议已工程实现；现有 2,685 条 TIGER 测试样本已 100% 恢复，100 条 Pilot 已生成
+  97 条 synthetic Query（82 PASS / 14 REVIEW / 1 FAIL / 3 ERROR），0 泄漏；但
+  **20 条人工复核队列尚未处理**（`human_audit.csv` 决策列全空），全量 2,685 条未生成，数据集未冻结。
+  规范见 [EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md](../phase7/EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md)，
+  结果见 [PILOT_REPORT_V0.1.md](../phase7/PILOT_REPORT_V0.1.md)。
 - **影响**：Phase 7 的 E5 文本召回、Fusion、Reranker、Judgment、Planner 质量评估全部缺少主评测集；
   不得用 AI 自动生成的标签冒充人工相关性标注。
 - **需要负责人**：O3（标注人员、数量、语言、截止时间）。
@@ -80,7 +82,7 @@
 | P1-7 | Memory embedding 配置与 D9 不一致 | D9 推荐/验证 `intfloat/multilingual-e5-base`；`configs/memory.yaml` 仍是 `intfloat/e5-base-v2`；fastembed 未装（无 BM25） | 中英混合 Memory 的召回质量与稀疏检索能力未定 |
 | P1-8 | D6 未接入真实链路 | `Judge.judge_ranked` 与 builder 已实现，但 workflow 未使用；真实 Catalog 下的 details 分布未测 | Judgment 仍可能缺 description/details 证据 |
 | P1-9 | 数据规模限制 | All_Beauty：8,201 用户 ≥3 事件、43,044 用户 ≥2；TIGER 已 No-Go | 任何 TIGER 重启都需先修改 Q5/数据范围并重新 Gate |
-| P1-10 | 评测工程位置不规范 | D11 harness 在 `scripts/evaluate_tiger_gate.py`；`src/recommender/evaluation/` 仅占位 | Phase 7 正式评测入口/复现脚本未产品化 |
+| P1-10 | 评测工程仍需产品化 | 已实现 `src/recommender/evaluation/`（时间审计/画像/生成/审核/校验）与 `agr eval` CLI；三路对照仍是 `scripts/retrieval_comparison_pilot.py` | 全量冻结、Reranker 对照与统计流程未产品化 |
 
 ---
 

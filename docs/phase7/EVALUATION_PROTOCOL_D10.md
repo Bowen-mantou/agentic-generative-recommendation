@@ -1,5 +1,8 @@
 # Phase 7 评测协议（D10：人工 Query 为主、Persona 合成为辅）
 
+> 备注：本文件为早期 D10 协议；数据集构建与冻结以
+> [EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md](EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md) 为准。
+
 - 日期：2026-11-24
 - 依据：D10 = C+A；`docs/decisions/Phase4-7_D1-D11_DECISION_DRAFT_V1.0.md` §12
 - 状态：**协议与模板已建立；人工标注尚未进行**（不能由 AI 代替人工标注）
