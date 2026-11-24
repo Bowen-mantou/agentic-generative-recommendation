@@ -90,15 +90,21 @@
 - LangGraph 图级工作流测试（stub 依赖，不是真实 E2E）；
 - 评测数据全链路 A–D（时间审计、Profile、Query、Auditor、校验、人工复核、冻结）。
 
-**还不能跑通的**
+**本轮新增并跑通的（E5-only）**
 
-- 没有 `agr recommend` 单命令串起真实 Planner → E5 → Fusion → Reranker → Judgment →
-  Controller → Generator → Memory；
-- Judgment 未在真实 E5 候选池上逐商品跑；
-- Controller 未在真实检索结果上跑 REPLAN/STOP；
-- Generator、Mem0 Adapter、`Memory.add` 未实现；
-- 没有一条完整 E2E trace；
-- 全量 Reranker 对照、用户 cluster bootstrap 未做。
+- `agr recommend` 单命令真实串联 Memory → Planner → E5 → Fusion → Reranker → Evidence →
+  Judgment → LangGraph Controller → Generator；
+- Judgment 在真实 E5 候选池上逐商品真实调用；
+- Controller 在真实检索结果上运行 STOP / 自然 REPLAN；
+- Generator、Mem0 Adapter、显式反馈 add/read/隔离已实现并验证；
+- 3 条完整 E2E trace + 1 条 REPLAN trace + 1 条 feedback trace；
+- 真实 E2E 集成测试 1 passed。
+
+**仍未完成**
+
+- 2,224 条全量 Reranker 对照、用户 cluster bootstrap；
+- Q12 双路偏差确认；
+- Controller 阈值校准、Mem0 infer=True/BM25、Qdrant 鉴权/备份、API 日预算。
 
 ## 6. 主要风险与未决事项
 
@@ -106,9 +112,9 @@
 |---|---|
 | TIGER 路线 | D11 No-Go；是否关闭、延期或换数据范围未定 |
 | Q12 验收口径 | E5 单路能否作为 Phase 0–6 验收，需要负责人确认偏差文本 |
-| E2E 优先级 | Phase 5 E2E、Phase 6 Generator/Memory、Phase 7 Reranker 全量，谁先做未定 |
+| E2E 优先级 | E2E 已完成；下一步按 P1 Reranker → P2 Judgment/Controller → P3 Memory → P4 工程可靠性 |
 | 人审抽样 | 67/2,224 抽样全部通过；是否扩大抽检未定 |
-| 评测完整性 | 2,224 条的 Reranker、cluster bootstrap 未完成 |
+| 评测完整性 | 2,224 条的 Reranker、cluster bootstrap 未完成（P1） |
 | Controller 阈值 | `calibrated=false`；min_judgments=3 等为工程初值 |
 | 部署/安全 | Qdrant 仅回环、无鉴权/TLS；备份未定时；API 成本未设上限 |
 | 数据范围 | All_Beauty 仅 8,201 个 ≥3 事件用户，限制 TIGER 可学习性 |
@@ -131,11 +137,10 @@
 
 按优先级可组合执行，但需要会议确定顺序：
 
-1. **E2E 接线**：新增 `agr recommend`，用真实 E5、Reranker、DeepSeek Planner/Judgment、
-   LangGraph Controller 跑一条带 trace 的请求；再接 D6 Evidence Builder；
-2. **Phase 6**：实现 Recommendation Generator、Mem0 Adapter，验证 `Memory.add` 与用户隔离；
-3. **评测收尾**：2,224 条全量 Reranker、用户 cluster bootstrap、最终 Phase 7 报告；
-4. **风险收尾**：LangGraph 纳入 bootstrap、Qdrant 鉴权/备份、API 预算与失败限流。
+1. **P1 Reranker 完整评测**：2,224 条，E5-only vs E5+Reranker，NDCG@10/MRR/Recall@K/用户 cluster bootstrap；
+2. **P2 Judgment + Controller**：准确性分析、STOP/REPLAN 质量、阈值校准；
+3. **P3 Memory**：`infer=True`、长期偏好、检索质量、冲突与隔离；
+4. **P4 工程可靠性**：Qdrant 鉴权/备份、并发、API 预算、监控。
 
 ## 9. 证据索引
 
@@ -145,4 +150,4 @@
 - Phase 6：[D9_MEMORY_DEPLOYMENT.md](phase6/D9_MEMORY_DEPLOYMENT.md)
 - 评测协议：[EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md](phase7/EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md)
 - v1.0：[final coverage](phase7/v1.0/final_coverage_report.json)、[human agreement](phase7/v1.0/human_agreement_report.json)、[comparison](phase7/v1.0/retrieval_comparison_v1.0.json)
-- 测试：本地 269 passed / 14 skipped；CI 3.10/3.11 green
+- 测试：本地 308 passed / 15 skipped；真实 E2E 1 passed；CI 3.10/3.11 green
