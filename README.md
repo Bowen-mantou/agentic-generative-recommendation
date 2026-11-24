@@ -42,6 +42,8 @@ metrics. The repository documents negative results as well as positive ones — 
 pilot did **not** pass its quality gate and is marked **No-Go** instead of being silently
 replaced with a mock.
 
+> **Live status snapshot:** [docs/STATUS.md](docs/STATUS.md) (updated 2026-11-24 23:46 Asia/Shanghai).
+
 ## Current status (2026-11-24)
 
 | Area | Status | Notes |

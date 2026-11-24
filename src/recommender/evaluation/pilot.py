@@ -13,6 +13,7 @@ import random
 import statistics
 import subprocess
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -223,10 +224,12 @@ def run_pilot(
     limit: int | None = None,
     seed: int | None = None,
     settings: Settings | None = None,
+    dataset_version: str | None = None,
+    workers: int = 1,
 ) -> dict[str, Any]:
     settings = settings or load_settings()
     config: AppConfig = settings.config
-    dataset_version = config.evaluation.query.dataset_version
+    dataset_version = dataset_version or config.evaluation.query.dataset_version
     limit = limit or config.evaluation.query.pilot_size
     seed = config.evaluation.query.seed if seed is None else seed
     directory = ensure_dir(out_dir)
@@ -243,43 +246,89 @@ def run_pilot(
     profiles = _profile_rows(pilot_samples, db_path, catalog_path, config.evaluation.profile)
     _write_jsonl(directory / "profiles" / "test_profiles.jsonl", profiles)
 
-    client = DeepSeekClient(settings=settings, reasoning_effort="none")
+    profile_by_sample = {profile.sample_id: profile for profile in profiles}
+    client = DeepSeekClient(
+        settings=settings,
+        reasoning_effort="none",
+        max_concurrency=max(1, workers),
+    )
     try:
         generator = QueryGenerator(client, config.evaluation.query)
         auditor = QueryAuditor(client, config.evaluation.query)
         existing_queries = _read_jsonl(directory / "queries" / "test_queries.jsonl", SyntheticQuery)
-        queries: list[SyntheticQuery] = []
-        for index, profile in enumerate(profiles, start=1):
-            cached = existing_queries.get(profile.sample_id)
-            query = cached or generator.generate(profile)
-            queries.append(query)
-            if index % 10 == 0:
-                _write_jsonl(directory / "queries" / "test_queries.jsonl", queries)
-                _LOGGER.info("query progress", extra={"done": index, "total": len(profiles)})
+        queries_by_id: dict[str, SyntheticQuery] = dict(existing_queries)
+        pending = [profile for profile in profiles if profile.sample_id not in queries_by_id]
+        if workers > 1 and len(pending) > 1:
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = {pool.submit(generator.generate, profile): profile for profile in pending}
+                for completed, query_future in enumerate(as_completed(futures), start=1):
+                    record = query_future.result()
+                    queries_by_id[record.sample_id] = record
+                    if completed % 20 == 0:
+                        _write_jsonl(
+                            directory / "queries" / "test_queries.jsonl",
+                            [
+                                queries_by_id[p.sample_id]
+                                for p in profiles
+                                if p.sample_id in queries_by_id
+                            ],
+                        )
+                        _LOGGER.info(
+                            "query progress", extra={"done": completed, "total": len(pending)}
+                        )
+        else:
+            for profile in pending:
+                queries_by_id[profile.sample_id] = generator.generate(profile)
+        queries = [queries_by_id[profile.sample_id] for profile in profiles]
         _write_jsonl(directory / "queries" / "test_queries.jsonl", queries)
 
         existing_audits = _read_jsonl(directory / "audits" / "test_audits.jsonl", QueryAudit)
-        profile_by_sample = {profile.sample_id: profile for profile in profiles}
-        audits: list[QueryAudit] = []
-        final_queries: list[SyntheticQuery] = []
-        for index, query in enumerate(queries, start=1):
+        audits_by_id: dict[str, QueryAudit] = dict(existing_audits)
+        pending_audits = [query for query in queries if query.sample_id not in audits_by_id]
+
+        def _audit_query(query: SyntheticQuery) -> tuple[SyntheticQuery, QueryAudit]:
             profile = profile_by_sample[query.sample_id]
-            cached = existing_audits.get(query.sample_id)
-            audit = cached or auditor.audit(profile, query)
+            audit = auditor.audit(profile, query)
+            final_query = query
             # Protocol §6.4/§9: regenerate once after a FAIL, then audit the replacement.
-            if audit.audit_status == "FAIL" and cached is None:
+            if audit.audit_status == "FAIL":
                 replacement = generator.generate(
                     profile, repair_hint=audit.reason or "unsupported claims"
                 )
                 if replacement.status == "generated":
-                    query = replacement
-                    audit = auditor.audit(profile, query)
-            audits.append(audit)
-            final_queries.append(query)
-            if index % 10 == 0:
-                _write_jsonl(directory / "audits" / "test_audits.jsonl", audits)
-                _LOGGER.info("audit progress", extra={"done": index, "total": len(queries)})
-        queries = final_queries
+                    final_query = replacement
+                    audit = auditor.audit(profile, final_query)
+            return final_query, audit
+
+        if workers > 1 and len(pending_audits) > 1:
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                audit_futures = {
+                    pool.submit(_audit_query, query): query for query in pending_audits
+                }
+                for completed, audit_future in enumerate(as_completed(audit_futures), start=1):
+                    audited_query, audit_record = audit_future.result()
+                    queries_by_id[audited_query.sample_id] = audited_query
+                    audits_by_id[audit_record.sample_id] = audit_record
+                    if completed % 20 == 0:
+                        _write_jsonl(
+                            directory / "audits" / "test_audits.jsonl",
+                            [
+                                audits_by_id[p.sample_id]
+                                for p in profiles
+                                if p.sample_id in audits_by_id
+                            ],
+                        )
+                        _LOGGER.info(
+                            "audit progress",
+                            extra={"done": completed, "total": len(pending_audits)},
+                        )
+        else:
+            for query in pending_audits:
+                audited_query, audit_record = _audit_query(query)
+                queries_by_id[audited_query.sample_id] = audited_query
+                audits_by_id[audit_record.sample_id] = audit_record
+        queries = [queries_by_id[profile.sample_id] for profile in profiles]
+        audits = [audits_by_id[profile.sample_id] for profile in profiles]
         _write_jsonl(directory / "queries" / "test_queries.jsonl", queries)
         _write_jsonl(directory / "audits" / "test_audits.jsonl", audits)
     finally:

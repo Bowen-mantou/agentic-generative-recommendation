@@ -150,6 +150,8 @@ def build_parser() -> argparse.ArgumentParser:
     eval_pilot.add_argument("--out", type=Path, default=None)
     eval_pilot.add_argument("--limit", type=int, default=None)
     eval_pilot.add_argument("--seed", type=int, default=None)
+    eval_pilot.add_argument("--workers", type=int, default=1)
+    eval_pilot.add_argument("--dataset-version", default=None)
 
     pool = subparsers.add_parser("pool", help="retrieve -> fuse -> constraints -> pool")
     pool.add_argument("--bundle", type=Path, required=True)
@@ -654,9 +656,8 @@ def _cmd_eval_pilot(args: argparse.Namespace) -> int:
     from recommender.evaluation.pilot import run_pilot
 
     db_path, catalog_path = _evaluation_paths(args, config)
-    out_dir = args.out or (
-        config.path("data_dir") / "evaluation" / config.evaluation.query.dataset_version
-    )
+    version = args.dataset_version or config.evaluation.query.dataset_version
+    out_dir = args.out or (config.path("data_dir") / "evaluation" / version)
     result = run_pilot(
         samples_path=args.samples,
         db_path=db_path,
@@ -666,6 +667,8 @@ def _cmd_eval_pilot(args: argparse.Namespace) -> int:
         limit=args.limit,
         seed=args.seed,
         settings=settings,
+        dataset_version=args.dataset_version,
+        workers=args.workers,
     )
     print(json.dumps(result["coverage"], indent=2, ensure_ascii=False, default=str))
     return 0

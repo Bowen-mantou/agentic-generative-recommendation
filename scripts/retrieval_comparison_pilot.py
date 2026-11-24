@@ -88,6 +88,7 @@ def main() -> int:
     parser.add_argument("--db", type=Path, required=True)
     parser.add_argument("--top-k", type=int, default=100)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--dataset-version", default="v1.0")
     args = parser.parse_args()
 
     from recommender.config import load_settings
@@ -186,7 +187,7 @@ def main() -> int:
         for tiger, e5 in zip(tiger_rankings, e5_rankings, strict=True)
     ]
     payload = {
-        "dataset": "v0.1-pilot PASS subset",
+        "dataset": f"{args.dataset_version} PASS subset",
         "note": "recall-stage only; Reranker comparison not included in this pilot run",
         "samples": len(selected),
         "methods": results,
