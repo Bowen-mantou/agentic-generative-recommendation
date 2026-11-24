@@ -18,8 +18,8 @@
 
 ## 0.1 已确认架构决策（2026-11-24，不可擅自更改）
 
-项目负责人已确认 12 项架构决策，完整记录与风险清单见
-`docs/decisions/FINAL_DECISIONS_AND_RISK_REGISTER.md`。本文件与六份模块文档不得与这些决策冲突；
+项目负责人已确认 12 项架构决策，另有 D1–D11 实施决策；完整记录与风险清单见
+`docs/decisions/FINAL_DECISIONS_AND_RISK_REGISTER.md`（§7.1）。本文件与六份模块文档不得与这些决策冲突；
 AI 编程助手不得自行更改。技术验证失败时必须提交证据、影响分析、替代方案与人时/资源成本，
 经负责人批准后才能更新决策记录与相关文档。
 
@@ -292,13 +292,13 @@ DeepSeek Planner、Judgment、Generator 使用独立 Prompt、独立 Pydantic Sc
 ## 8. 未验证事项
 
 以下事项必须通过仓库审计或小型预实验确认，不能猜测：
-1. TIGER 是否存在与当前数据 / Semantic ID 配置兼容的实现或权重。（进行中：Gate 1 R1，见 `docs/audit/tiger-compatibility-report.md`）
+1. TIGER 外部权重/兼容实现：**已核查无端到端权重**；A1/B1/B2 Pilot 均未通过 D11（[D1_B1_B2_GATE_REPORT.md](docs/phase4/D1_B1_B2_GATE_REPORT.md)），Phase 4 未完成、未全量训练。
 2. Amazon Reviews 2023 的实际品类文件、字段、规模和时间戳格式。（已验证：All_Beauty metadata 212,990,142 B / 112,590 商品；reviews 326,611,506 B）
 3. 商品元数据如何稳定映射 `parent_asin` 与 `product_id`。（已验证：metadata 含 `parent_asin`/`main_category`/`details`；映射在接入层完成）
 4. E5 具体 checkpoint、前缀格式和向量维度。（已确认：`intfloat/e5-base-v2`，768 维，`query:`/`passage:`；索引已建）
-5. Qwen3-Reranker-0.6B 推理接口、输入长度和硬件开销。（进行中：Transformers 原生 CPU 冒烟 R4/R5）
+5. Qwen3-Reranker-0.6B 推理接口、输入长度和硬件开销。（已验证：Transformers 原生 CPU，[reranker-smoke.md](docs/audit/reranker-smoke.md)；Phase 3 已实现）
 6. DeepSeek 具体模型 ID、API 参数和 JSON 输出校验方式。（已验证模型列表：`deepseek-flash`、`deepseek-v4-pro`；结构化输出待 Phase 5 验证）
-7. Mem0 OSS / Qdrant / SQLite 的部署方式和 SDK 版本。（待 Phase 6；Qdrant 独立容器 + 本地 Embedding，Q7）
+7. Mem0 OSS / Qdrant / SQLite 的部署方式和 SDK 版本。（部分验证：Qdrant v1.20.2 + mem0ai 2.2.1 + multilingual-e5-base，见 `docs/phase6/D9_MEMORY_DEPLOYMENT.md`；Memory.add 待 Phase 6）
 8. Controller 阈值和预算值如何由验证集确定。（待 Phase 5/7；当前值均标注未校准）
 
 ## 9. Definition of Done
