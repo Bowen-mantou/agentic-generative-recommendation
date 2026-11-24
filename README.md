@@ -1,5 +1,6 @@
 # Agentic Generative Recommendation
 
+[![CI](https://github.com/Bowen-mantou/agentic-generative-recommendation/actions/workflows/ci.yml/badge.svg)](https://github.com/Bowen-mantou/agentic-generative-recommendation/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
