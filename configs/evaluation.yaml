@@ -1,0 +1,20 @@
+evaluation:
+  # Phase 7 evaluation dataset construction (protocol V1.0).
+  # Version these values with every frozen evaluation dataset.
+  profile:
+    version: v1
+    high_support: 3
+    medium_support: 2
+    max_facts: 5
+    max_unknown: 4
+
+  query:
+    generator_prompt_version: query_generator_v1
+    auditor_prompt_version: query_auditor_v1
+    temperature: 0.0
+    max_tokens: 512
+    audit_max_tokens: 512
+    pilot_size: 100
+    seed: 42
+    pass_sample_rate: 0.03
+    dataset_version: v0.1-pilot

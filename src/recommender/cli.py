@@ -134,6 +134,23 @@ def build_parser() -> argparse.ArgumentParser:
     tiger_info = tiger_sub.add_parser("info", help="print RQ-VAE / Semantic ID manifests")
     tiger_info.add_argument("--dir", type=Path, required=True)
 
+    evaluation = subparsers.add_parser("eval", help="Phase 7 evaluation dataset")
+    evaluation_sub = evaluation.add_subparsers(dest="eval_command", required=True)
+    eval_audit = evaluation_sub.add_parser("audit", help="recover and audit temporal samples")
+    eval_audit.add_argument("--samples", type=Path, required=True)
+    eval_audit.add_argument("--db", type=Path, default=None)
+    eval_audit.add_argument("--semantic-ids", type=Path, required=True)
+    eval_audit.add_argument("--catalog", type=Path, default=None)
+    eval_audit.add_argument("--out", type=Path, default=None)
+    eval_pilot = evaluation_sub.add_parser("pilot", help="profiles -> queries -> audits")
+    eval_pilot.add_argument("--samples", type=Path, required=True)
+    eval_pilot.add_argument("--db", type=Path, default=None)
+    eval_pilot.add_argument("--semantic-ids", type=Path, required=True)
+    eval_pilot.add_argument("--catalog", type=Path, default=None)
+    eval_pilot.add_argument("--out", type=Path, default=None)
+    eval_pilot.add_argument("--limit", type=int, default=None)
+    eval_pilot.add_argument("--seed", type=int, default=None)
+
     pool = subparsers.add_parser("pool", help="retrieve -> fuse -> constraints -> pool")
     pool.add_argument("--bundle", type=Path, required=True)
     pool.add_argument("--catalog", type=Path, required=True)
@@ -590,6 +607,70 @@ def _cmd_tiger_evaluate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _evaluation_paths(args: argparse.Namespace, config: AppConfig) -> tuple[Path, Path]:
+    db_path = args.db or config.resolve(config.memory.sqlite.path)
+    catalog = args.catalog or (config.path("catalog_dir") / "all_beauty_v2")
+    return db_path, catalog
+
+
+def _cmd_eval_audit(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    from recommender.evaluation.pilot import build_temporal_dataset
+
+    db_path, catalog_path = _evaluation_paths(args, config)
+    out_dir = args.out or (config.path("data_dir") / "evaluation" / "audit")
+    samples, labels, stats = build_temporal_dataset(
+        samples_path=args.samples,
+        db_path=db_path,
+        semantic_ids_dir=args.semantic_ids,
+        catalog_path=catalog_path,
+        out_dir=out_dir,
+        dataset_version=config.evaluation.query.dataset_version,
+    )
+    print(
+        json.dumps(
+            {
+                "out_dir": str(out_dir),
+                "recovered": len(samples),
+                "labels": len(labels),
+                "stats": stats.as_dict(),
+            },
+            indent=2,
+            ensure_ascii=False,
+            default=str,
+        )
+    )
+    return 0
+
+
+def _cmd_eval_pilot(args: argparse.Namespace) -> int:
+    settings = _settings(args)
+    config = settings.config
+    _configure_logging(config)
+    if not settings.has_deepseek_api_key():
+        raise SystemExit("DEEPSEEK_API_KEY is required for the Query Generator/Auditor pilot")
+    from recommender.evaluation.pilot import run_pilot
+
+    db_path, catalog_path = _evaluation_paths(args, config)
+    out_dir = args.out or (
+        config.path("data_dir") / "evaluation" / config.evaluation.query.dataset_version
+    )
+    result = run_pilot(
+        samples_path=args.samples,
+        db_path=db_path,
+        semantic_ids_dir=args.semantic_ids,
+        catalog_path=catalog_path,
+        out_dir=out_dir,
+        limit=args.limit,
+        seed=args.seed,
+        settings=settings,
+    )
+    print(json.dumps(result["coverage"], indent=2, ensure_ascii=False, default=str))
+    return 0
+
+
 def _cmd_tiger_info(args: argparse.Namespace) -> int:
     from recommender.utils.io import read_json
 
@@ -821,6 +902,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("tiger", "generator"): _cmd_tiger_generator,
         ("tiger", "evaluate"): _cmd_tiger_evaluate,
         ("tiger", "info"): _cmd_tiger_info,
+        ("eval", "audit"): _cmd_eval_audit,
+        ("eval", "pilot"): _cmd_eval_pilot,
         ("pool", None): _cmd_pool,
         ("rerank", None): _cmd_rerank,
         ("search", None): _cmd_search,

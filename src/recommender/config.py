@@ -48,6 +48,7 @@ CONFIG_FILES: dict[str, str] = {
     "retrieval": "retrieval.yaml",
     "controller": "controller.yaml",
     "memory": "memory.yaml",
+    "evaluation": "evaluation.yaml",
 }
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -310,6 +311,35 @@ class MemoryConfig(_StrictModel):
     sqlite: SqliteConfig = SqliteConfig()
 
 
+class EvaluationProfileConfig(_StrictModel):
+    """Deterministic profile-extraction thresholds (versioned with the dataset)."""
+
+    version: str = "v1"
+    high_support: int = Field(default=3, ge=1)
+    medium_support: int = Field(default=2, ge=1)
+    max_facts: int = Field(default=5, ge=1, le=20)
+    max_unknown: int = Field(default=4, ge=0, le=10)
+
+
+class EvaluationQueryConfig(_StrictModel):
+    """Query-generator/auditor settings and pilot sizes."""
+
+    generator_prompt_version: str = "query_generator_v1"
+    auditor_prompt_version: str = "query_auditor_v1"
+    temperature: float = Field(default=0.0, ge=0.0, le=1.0)
+    max_tokens: int = Field(default=512, gt=0, le=4096)
+    audit_max_tokens: int = Field(default=512, gt=0, le=4096)
+    pilot_size: int = Field(default=100, ge=1)
+    seed: int = 42
+    pass_sample_rate: float = Field(default=0.03, ge=0.0, le=0.5)
+    dataset_version: str = "v0.1-pilot"
+
+
+class EvaluationConfig(_StrictModel):
+    profile: EvaluationProfileConfig = EvaluationProfileConfig()
+    query: EvaluationQueryConfig = EvaluationQueryConfig()
+
+
 class AppConfig(_StrictModel):
     """Validated project configuration (everything except secrets)."""
 
@@ -326,6 +356,7 @@ class AppConfig(_StrictModel):
     controller: ControllerConfig = ControllerConfig()
     planner: PlannerConfig = PlannerConfig()
     memory: MemoryConfig
+    evaluation: EvaluationConfig = EvaluationConfig()
     project_root: Path = Field(default_factory=lambda: PROJECT_ROOT, exclude=True)
 
     @model_validator(mode="after")

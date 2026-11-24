@@ -1,0 +1,47 @@
+{
+  "dataset": "v0.1-pilot PASS subset",
+  "note": "recall-stage only; Reranker comparison not included in this pilot run",
+  "samples": 82,
+  "methods": {
+    "tiger": {
+      "samples": 82,
+      "recall@10": 0.0,
+      "recall@50": 0.0,
+      "recall@100": 0.0,
+      "ndcg@10": 0.0,
+      "mrr": 0.0,
+      "coverage": 1.0
+    },
+    "e5": {
+      "samples": 82,
+      "recall@10": 0.0244,
+      "recall@50": 0.0488,
+      "recall@100": 0.0488,
+      "ndcg@10": 0.0199,
+      "mrr": 0.0195,
+      "coverage": 1.0
+    },
+    "hybrid": {
+      "samples": 82,
+      "recall@10": 0.0244,
+      "recall@50": 0.0488,
+      "recall@100": 0.0488,
+      "ndcg@10": 0.0138,
+      "mrr": 0.0109,
+      "coverage": 1.0
+    }
+  },
+  "complementarity": {
+    "tiger_only_targets": 0,
+    "e5_missed_targets": 78,
+    "rescue_rate": 0.0,
+    "mean_candidate_overlap": 0.0047,
+    "incremental_recall@10": 0.0,
+    "incremental_recall@50": 0.0
+  },
+  "latency_ms_per_sample": {
+    "tiger": 15.9,
+    "e5": 185.8
+  },
+  "target_leakage": "queries are synthetic PASS queries built without target labels"
+}

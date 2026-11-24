@@ -1,0 +1,22 @@
+{
+  "raw_test_samples": 2685,
+  "recovered_samples": 2685,
+  "recovery_failures": {},
+  "pilot_selected": 100,
+  "profiles_built": 100,
+  "query_status": {
+    "insufficient_profile": 3,
+    "generated": 97
+  },
+  "audit_status": {
+    "ERROR": 3,
+    "REVIEW": 14,
+    "PASS": 82,
+    "FAIL": 1
+  },
+  "validation_passed": 97,
+  "final_pass_unreviewed": 82,
+  "human_review_pending": 20,
+  "final_frozen_eligible": 0,
+  "note": "REVIEW/FAIL/ERROR and sampled PASS rows await human review; they are not frozen as PASS."
+}

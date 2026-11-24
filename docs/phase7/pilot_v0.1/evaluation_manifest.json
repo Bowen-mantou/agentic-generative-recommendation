@@ -1,0 +1,59 @@
+{
+  "dataset_version": "v0.1-pilot",
+  "created_at": "2026-11-24T15:22:34.587793+00:00",
+  "source_dataset": "Amazon Reviews 2023",
+  "category": "All_Beauty",
+  "split_method": "temporal",
+  "profile_version": "v1",
+  "query_generator": {
+    "model": "deepseek-flash",
+    "prompt_version": "query_generator_v1",
+    "prompt_hash": "4ce3807e6425c69d",
+    "temperature": 0.0
+  },
+  "query_auditor": {
+    "model": "deepseek-flash",
+    "prompt_version": "query_auditor_v1",
+    "prompt_hash": "45983f014da1ec6e"
+  },
+  "embedding_model": "intfloat/e5-base-v2",
+  "catalog_version": "all_beauty_v2",
+  "random_seed": 42,
+  "target_isolated": true,
+  "is_synthetic_query": true,
+  "counts": {
+    "raw_test_samples": 2685,
+    "recovered_samples": 2685,
+    "recovery_failures": {},
+    "pilot_selected": 100,
+    "profiles_built": 100,
+    "query_status": {
+      "insufficient_profile": 3,
+      "generated": 97
+    },
+    "audit_status": {
+      "ERROR": 3,
+      "REVIEW": 14,
+      "PASS": 82,
+      "FAIL": 1
+    },
+    "validation_passed": 97,
+    "final_pass_unreviewed": 82,
+    "human_review_pending": 20,
+    "final_frozen_eligible": 0,
+    "note": "REVIEW/FAIL/ERROR and sampled PASS rows await human review; they are not frozen as PASS."
+  },
+  "files": {
+    "test_samples": "50e0852916595b8102dfb1afe83208cb284edfa3184dbc700401fe302b9cf54a",
+    "target_labels": "6c70c4891f08c725fd83f95006863f0a9c974b3b665f1d741dce42c3415b6fb6",
+    "test_profiles": "cc8f18f520e1a381cb83e12739ba309948632bed8cff674e5e54fda79df2c388",
+    "test_queries": "2038392914f52f03649325d3c402a3b8ea2c42ebece3ae92402eb7035d3e928f",
+    "test_audits": "b935588e15474e5d2015ac3da0efc9854587db3a49ea05e2e8e6eb0f334f5112",
+    "coverage_report": "36069e4838a8771837b0c466c37c5ad28a794d69ef71b93cf909c21e3c5d4b3b",
+    "leakage_check": "043c2d239625e8349282fb3a35a3ad6e52db57d76ec46761fd9d927665fef761",
+    "quality_report": "cfcc6d65292f6c5c6c441d6f12027efffa1e80d21e52c012b66956e4e657b534",
+    "human_review_queue": "9056f827a57f0a2880483876c0ead90e8d02e59254d8f83b08a31818e5b9c130"
+  },
+  "code_commit": "f75fab2",
+  "human_review_completed": false
+}

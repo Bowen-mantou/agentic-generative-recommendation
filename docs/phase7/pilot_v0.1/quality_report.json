@@ -1,0 +1,24 @@
+{
+  "query_length_words": {
+    "min": 3,
+    "median": 10,
+    "max": 16
+  },
+  "used_fact_ids_total": 417,
+  "unsupported_claims_total": 6,
+  "audit_status": {
+    "ERROR": 3,
+    "REVIEW": 14,
+    "PASS": 82,
+    "FAIL": 1
+  },
+  "query_status": {
+    "insufficient_profile": 3,
+    "generated": 97
+  },
+  "tokens": {
+    "prompt_tokens": 190415,
+    "completion_tokens": 20212
+  },
+  "human_review_rows": 20
+}
