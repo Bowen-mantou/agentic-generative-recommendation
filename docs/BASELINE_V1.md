@@ -2,7 +2,7 @@
 
 - 冻结时间：2026-11-25 07:05（Asia/Shanghai）
 - 用途：固定已经跑通的 E5-only E2E 主线，后续优化不得静默破坏；P1 Reranker 实验以此为对照基线。
-- Git commit：`a1c987f`（tag `e2e-baseline-v1`）
+- Git commit：`5ea7b5a`（tag `e2e-baseline-v1`；被冻结的 E2E 代码基线为 `a1c987f`）
 - GitHub Actions：run `45446919385`，Python 3.10/3.11 **success**
 - Python：3.10（服务器 `/tmp/agr/venv`）；本地测试 3.10 / CI 3.10+3.11
 

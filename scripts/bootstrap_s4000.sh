@@ -54,6 +54,10 @@ echo "installing project dependencies from $PIP_INDEX_URL"
   "huggingface-hub>=0.24,<2" \
   "tqdm>=4.66,<5" \
   "datasets>=2.20,<5" \
+  "langgraph>=0.2,<2" \
+  "langchain-core>=0.3,<2" \
+  "mem0ai>=2.2,<3" \
+  "qdrant-client>=1.12,<2" \
   "pytest>=8.2,<10" \
   "pytest-cov>=5,<8" \
   "ruff>=0.5,<1" \
@@ -74,7 +78,7 @@ fi
 
 echo "verifying imports and versions"
 python - <<'PY'
-import faiss, numpy, pydantic, sentence_transformers, torch, transformers
+import faiss, langgraph, mem0, numpy, pydantic, qdrant_client, sentence_transformers, torch, transformers
 print("python", __import__("sys").version.split()[0])
 print("torch", torch.__version__, "cuda", torch.cuda.is_available())
 print("transformers", transformers.__version__)
@@ -82,6 +86,8 @@ print("sentence-transformers", sentence_transformers.__version__)
 print("faiss", faiss.__version__)
 print("numpy", numpy.__version__)
 print("pydantic", pydantic.VERSION)
+print("langgraph", getattr(langgraph, "__version__", "ok"))
+print("mem0", getattr(mem0, "__version__", "ok"), "qdrant-client", qdrant_client.__version__)
 PY
 
 echo "running unit tests"

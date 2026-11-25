@@ -104,7 +104,7 @@ Mem0 Read → DeepSeek Planner → E5/FAISS → Fusion → Hard Constraints
 | TIGER | D11 No-Go；本轮 E5-only，**不宣称双路召回完成** |
 | Q12 偏差 | 需课程/老师单独确认；本轮只完成 E5-only 工程主线 |
 | Controller 阈值 | `calibrated=false`；`min_judgments=3` 等是工程初值 |
-| 全量 Reranker / Cluster Bootstrap | 未做；2,224 条最终评测集只有 Recall 阶段 |
+| 全量 Reranker / Cluster Bootstrap | P1 Top-10 已完成（2,224 条），无显著增益；Top-100/更大预算未跑 |
 | Mem0 `infer=True` 抽取 | 未验证；Adapter 固定 infer=False |
 | BM25/混合检索 | fastembed 未装，dense-only |
 | Qdrant 鉴权 | 仅回环、无鉴权/TLS |

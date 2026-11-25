@@ -224,6 +224,10 @@ def main() -> int:
         checkpoint.unlink()
     rerank_latency = (time.perf_counter() - started) * 1000 / max(1, len(rows))
     rerank_metrics = _metrics(reranked, target)
+    if args.top_n < 50:
+        rerank_metrics["recall@50"] = None
+    if args.top_n < 100:
+        rerank_metrics["recall@100"] = None
 
     deltas = [
         _bootstrap_delta(

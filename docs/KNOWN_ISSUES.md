@@ -8,7 +8,7 @@
 |---|---|---|---|
 | K1 | TIGER D11 No-Go；E5-only 不是双路召回 | 研究结论/答辩口径 | 保留 No-Go 报告；不宣称双路验收；Q12 偏差待确认 |
 | K2 | Controller 阈值未校准（`calibrated=false`） | 质量 STOP 的统计有效性 | 当前为工程初值；Phase 7 校准 |
-| K3 | 全量 2,224 条 Reranker / Cluster Bootstrap 未跑 | 最终排序指标缺失 | 方案明确不阻塞 E2E；后续完成 |
+| K3 | P1 已完成 Top-10 Reranker（2,224 条，无显著增益）；Top-100/更大预算未跑 | 排序增益结论受候选预算限制 | 见 `docs/phase7/P1_RERANKER_REPORT.md`；后续在 GPU/并行下补 Top-100 |
 | K4 | Mem0 `infer=True` LLM 抽取未验证 | 反馈自动抽取能力 | 当前固定 `infer=False`，只写显式反馈 |
 | K5 | Qdrant 无鉴权/TLS，仅回环 | 共享服务器安全 | 保持 127.0.0.1；公网部署前必须加鉴权/TLS |
 | K6 | Mem0 BM25/spaCy 未安装 | 混合检索不可用 | 当前 dense-only；不影响本轮 G5 |

@@ -30,7 +30,7 @@
 | Phase 5 Planner/Judgment/Controller | ✅ E2E 通过 | DeepSeek Planner/Judgment、LangGraph 真实运行；STOP/REPLAN 有 trace |
 | Phase 6 Generator/Memory | ✅ 本轮实现 | DeepSeek Generator、Mem0 Adapter；E2E 与显式反馈写回验证 |
 | Phase 7 评测数据 | ✅ v1.0 冻结 | 2,224 条最终样本；人工复核完成；0 泄漏 |
-| Phase 7 指标实验 | 🟡 Recall 阶段 | 全量 Reranker、Cluster Bootstrap 未跑（本轮不阻塞 E2E） |
+| Phase 7 指标实验 | 🟡 P1 完成（Top-10） | 2,224 条 E5 vs Reranker；Reranker NDCG +0.0006（CI 跨 0），无显著增益；Top-100 未跑 |
 
 ## 3. E2E 真实证据
 
@@ -73,7 +73,7 @@
 
 ## 6. 剩余工作
 
-1. 2,224 条全量 Reranker + 用户 Cluster Bootstrap（Phase 7）；
+1. P1 的 Top-100/更大候选预算 Reranker、GPU/并行与统计校准；
 2. Q12 偏差确认与最终答辩口径；
 3. Controller 阈值校准（Phase 7）；
 4. Mem0 `infer=True`、BM25、并发压测；
@@ -102,5 +102,5 @@
 - E2E：[E2E_INTEGRATION_REPORT.md](E2E_INTEGRATION_REPORT.md)、[E2E_RUNBOOK.md](E2E_RUNBOOK.md)、[ACCEPTANCE_CHECKLIST.md](ACCEPTANCE_CHECKLIST.md)、[BASELINE_V1.md](BASELINE_V1.md)
 - Phase 4 No-Go：[D1_B1_B2_GATE_REPORT.md](phase4/D1_B1_B2_GATE_REPORT.md)
 - Phase 6：[GENERATOR_MEMORY.md](phase6/GENERATOR_MEMORY.md)、[D9_MEMORY_DEPLOYMENT.md](phase6/D9_MEMORY_DEPLOYMENT.md)
-- 评测：[EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md](phase7/EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md)、[v1.0 manifest](phase7/v1.0/evaluation_manifest_final.json)
+- 评测：[P1 Reranker 报告](phase7/P1_RERANKER_REPORT.md)、[EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md](phase7/EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md)、[v1.0 manifest](phase7/v1.0/evaluation_manifest_final.json)
 - 已知问题：[KNOWN_ISSUES.md](KNOWN_ISSUES.md)

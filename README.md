@@ -56,7 +56,7 @@ replaced with a mock.
 | Phase 4 — TIGER | ⛔ **No-Go** | Real RQ-VAE + autoregressive generator trained; Recall@10 0.15%/0.25%/0.07% (A1/B1/B2) vs popularity 0.34–0.82% and E5-profile 2.9–4.4%. No full training. [Report](docs/phase4/D1_B1_B2_GATE_REPORT.md) |
 | Phase 5 — Planner / Judgment / Controller | ✅ real E2E | DeepSeek Planner/Judgment + LangGraph controller executed end-to-end; STOP/REPLAN traces |
 | Phase 6 — Generator / Memory | ✅ implemented | DeepSeek Generator and Mem0 Adapter; real add/read/isolation validated in E2E |
-| Phase 7 — evaluation | ✅ v1.0 frozen | 2,685 temporal samples recovered; 2,551 queries; 528 human-reviewed (67 PASS / 461 FAIL); **2,224 final samples frozen**; 0 leakage. [Final report](docs/phase7/v1.0/final_coverage_report.json) |
+| Phase 7 — evaluation | ✅ v1.0 frozen / 🟡 P1 | 2,224 final samples frozen; P1 reranker top-10 on 2,224: no significant gain (+0.0006 NDCG, CI includes 0). [P1 report](docs/phase7/P1_RERANKER_REPORT.md) |
 
 Test snapshot: **308 passed / 15 skipped** locally; the real E2E integration test passes on the
 CPU server (35.9 s). Unit tests run without GPUs, model weights, API keys or datasets.
@@ -138,7 +138,7 @@ tests/integration/ model/index/service tests (opt-in; skipped by default)
 - Phase 5: [Planner / Judgment / Controller](docs/phase5/PLANNER_JUDGMENT_CONTROLLER.md)
 - E2E: [integration report](docs/E2E_INTEGRATION_REPORT.md), [runbook](docs/E2E_RUNBOOK.md), [acceptance checklist](docs/ACCEPTANCE_CHECKLIST.md), [frozen baseline](docs/BASELINE_V1.md)
 - Phase 6: [Generator + Mem0 adapter](docs/phase6/GENERATOR_MEMORY.md), [Qdrant + multilingual E5 deployment](docs/phase6/D9_MEMORY_DEPLOYMENT.md)
-- Phase 7: [dataset protocol](docs/phase7/EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md), [pilot report](docs/phase7/PILOT_REPORT_V0.1.md), [human-query protocol](docs/phase7/EVALUATION_PROTOCOL_D10.md)
+- Phase 7: [P1 reranker report](docs/phase7/P1_RERANKER_REPORT.md), [dataset protocol](docs/phase7/EVALUATION_DATASET_CONSTRUCTION_PROTOCOL_V1.0.md), [pilot report](docs/phase7/PILOT_REPORT_V0.1.md)
 - Decisions and risk register: [docs/decisions/FINAL_DECISIONS_AND_RISK_REGISTER.md](docs/decisions/FINAL_DECISIONS_AND_RISK_REGISTER.md)
 
 ## What is real vs. not yet verified
@@ -154,7 +154,7 @@ tests/integration/ model/index/service tests (opt-in; skipped by default)
 **Not yet verified / intentionally incomplete**
 
 - End-to-end real E2E (E5-only) is wired and tested; it is **not** the dual-path TIGER+E5 system.
-- Controller thresholds remain uncalibrated (`calibrated: false`); the frozen 2,224-sample v1.0 set still lacks a full Reranker/Cluster Bootstrap run.
+- Controller thresholds remain uncalibrated (`calibrated: false`); P1 reranker was run on all 2,224 samples with a top-10 candidate budget (no significant gain), while a top-100/GPU run is still pending.
 - Mem0 `infer=True`, BM25 and multi-process concurrency are not verified.
 - TIGER is No-Go at current data scale and is not used as the primary recall path.
 

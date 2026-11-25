@@ -114,7 +114,7 @@
 | Q12 验收口径 | E5 单路能否作为 Phase 0–6 验收，需要负责人确认偏差文本 |
 | E2E 优先级 | E2E 已完成；下一步按 P1 Reranker → P2 Judgment/Controller → P3 Memory → P4 工程可靠性 |
 | 人审抽样 | 67/2,224 抽样全部通过；是否扩大抽检未定 |
-| 评测完整性 | 2,224 条的 Reranker、cluster bootstrap 未完成（P1） |
+| 评测完整性 | P1 Top-10 Reranker 已完成：无显著增益；Top-100/更大预算与统计校准未完成 |
 | Controller 阈值 | `calibrated=false`；min_judgments=3 等为工程初值 |
 | 部署/安全 | Qdrant 仅回环、无鉴权/TLS；备份未定时；API 成本未设上限 |
 | 数据范围 | All_Beauty 仅 8,201 个 ≥3 事件用户，限制 TIGER 可学习性 |

@@ -1,0 +1,64 @@
+{
+  "dataset": "v1.0 final (2,224)",
+  "samples": 2224,
+  "candidate_budget": 10,
+  "methods": {
+    "e5_only": {
+      "samples": 2224,
+      "recall@10": 0.0198,
+      "recall@50": 0.0333,
+      "recall@100": 0.036,
+      "ndcg@10": 0.0121,
+      "mrr": 0.0104
+    },
+    "e5_plus_reranker": {
+      "samples": 2224,
+      "recall@10": 0.0198,
+      "recall@50": null,
+      "recall@100": null,
+      "ndcg@10": 0.0127,
+      "mrr": 0.0104
+    }
+  },
+  "bootstrap_reranker_minus_e5": [
+    {
+      "metric": "ndcg",
+      "k": 10,
+      "delta": 0.0006,
+      "ci95": [
+        -0.0008,
+        0.0019
+      ],
+      "p_boot_gt_0": 0.783,
+      "clusters": 1301
+    },
+    {
+      "metric": "mrr",
+      "k": 10,
+      "delta": -0.0,
+      "ci95": [
+        -0.0019,
+        0.0018
+      ],
+      "p_boot_gt_0": 0.467,
+      "clusters": 1301
+    },
+    {
+      "metric": "recall",
+      "k": 10,
+      "delta": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "p_boot_gt_0": 0.0,
+      "clusters": 1301
+    }
+  ],
+  "latency_ms_per_sample": {
+    "e5": 8.3,
+    "rerank": 1306.0
+  },
+  "note": "Reranker sees E5 top-10; Recall@50/100 for reranked path are not comparable and should be read from e5_only. Reranker max_length=512, batch=64.",
+  "postprocessing": "Reranker Recall@50/100 set null: its candidate budget is top-10, so these values are not comparable to E5 full top-100."
+}

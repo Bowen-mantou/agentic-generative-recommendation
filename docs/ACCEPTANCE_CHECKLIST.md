@@ -43,7 +43,8 @@
 
 ## 尚未通过/未完成
 
-- [ ] 2,224 条全量 Reranker 与 User Cluster Bootstrap（方案明确不阻塞本轮）
+- [x] P1：2,224 条 E5 vs Reranker（Top-10）与用户 Bootstrap；无显著增益
+- [ ] Reranker Top-100 与更大预算（CPU 成本高，未跑）
 - [ ] Q12 偏差的课程/老师确认
 - [ ] Controller 统计校准
 - [ ] Mem0 `infer=True`、BM25、并发压测
